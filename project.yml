@@ -24,6 +24,8 @@ targets:
       properties:
         CFBundleDisplayName: Behavior Aisle
         ITSAppUsesNonExemptEncryption: false
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
         NSWorldSensingUsageDescription: World sensing keeps the store and shoppers at life size around you.
         UIApplicationSceneManifest:
           UIApplicationPreferredDefaultSceneSessionRole: UIWindowSceneSessionRoleApplication

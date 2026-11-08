@@ -10,12 +10,19 @@ import simd
 final class AppModel {
     var catalog: [Product] = Catalog.laidOut()
     var shoppers: [ShopperAgent] = []
-    var mode: PredictorMode = PredictorMode(rawValue: UserDefaults.standard.string(forKey: "mode") ?? "") ?? .heuristic {
+    var mode: PredictorMode = PredictorMode(rawValue: UserDefaults.standard.string(forKey: "mode") ?? "") ?? AppModel.defaultMode {
         didSet { UserDefaults.standard.set(mode.rawValue, forKey: "mode") }
     }
-    var proxyURL: String = UserDefaults.standard.string(forKey: "proxyURL") ?? "" {
+    var proxyURL: String = UserDefaults.standard.string(forKey: "proxyURL") ?? AppModel.defaultProxy {
         didSet { UserDefaults.standard.set(proxyURL, forKey: "proxyURL") }
     }
+    #if targetEnvironment(simulator)
+    static let defaultProxy = "http://127.0.0.1:8787/predict"
+    static let defaultMode = PredictorMode.live
+    #else
+    static let defaultProxy = ""
+    static let defaultMode = PredictorMode.heuristic
+    #endif
     var showArcs = true
     var showCards = true
     var showAnomaly = true
