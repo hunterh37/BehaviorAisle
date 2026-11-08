@@ -38,5 +38,7 @@
 		<key>UISceneConfigurations</key>
 		<dict/>
 	</dict>
+	<key>UnboxAPIKey</key>
+	<string>$(UNBOXAI_API_KEY)</string>
 </dict>
 </plist>

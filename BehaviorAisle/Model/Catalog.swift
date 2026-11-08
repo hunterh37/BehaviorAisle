@@ -17,6 +17,22 @@ struct Product: Codable, Sendable, Identifiable, Hashable {
     var anchor: SIMD3<Float> = .zero
     var stand: SIMD3<Float> = .zero
     var onSale = false
+    var inStock = true
+    /// Gross margin share of shelf price by category (US grocery averages).
+    var marginRate: Double {
+        switch category {
+        case .produce: 0.35
+        case .dairy: 0.25
+        case .bakery: 0.45
+        case .pantry: 0.30
+        case .snacks: 0.40
+        case .beverages: 0.30
+        case .frozen: 0.28
+        case .household: 0.32
+        }
+    }
+    /// Margin per unit sold at the current price (sale is 20% off shelf, cost unchanged).
+    var unitMargin: Double { onSale ? price * (marginRate - 0.2) : price * marginRate }
 }
 
 enum Catalog {

@@ -77,7 +77,7 @@ actor PredictionLog {
 /// Mode router: live -> record, fall back to replay then heuristic.
 struct RoutedPredictor: Predictor {
     var mode: PredictorMode
-    var live: BehaviorGPTPredictor?
+    var live: (any Predictor)?
     var heuristic = HeuristicPredictor()
 
     func predict(_ req: PredictionRequest) async throws -> PredictionResult {

@@ -12,7 +12,8 @@ struct BehaviorAisleApp: App {
     @State private var style: ImmersionStyle = .full
 
     init() {
-        RealityHD.setup(.balanced)
+        // Batch static singles into merged meshes (fewer draw calls, same look); governor trims LOD only under load.
+        RealityHD.setup(RealPerformance(.balanced).with { $0.forceBatching = true; $0.adaptive = true })
         Human.setup(.balanced)
     }
 

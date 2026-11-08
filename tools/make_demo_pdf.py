@@ -16,21 +16,21 @@ PAGES = [
     ]),
     ("04-result.png", "1. Profile read", ["Interests and category affinity from @maya_cooks bio and posts."]),
     ("07-intent-hero.png", "2. Interest to item", [
-        "Panel ties each predicted item to the interest that explains it (sourdough -> Sourdough Loaf).",
+        "Panel ties each predicted item to the interest that explains it (farmers market -> Roma Tomatoes).",
         "Probability, aisle and rank per item. Rank 1 highlighted in the shopper color.",
     ]),
+    ("07b-intent-panel.png", "2b. Panel close-up", [
+        "Roma Tomatoes, Red Apples, Navel Oranges, each traced to 'farmers market', Aisle 1 Produce.",
+    ]),
     ("08-intent-path.png", "3. Where they go next", [
-        "Marching dotted path on the floor to the aisle spot.",
+        "Marching dotted path on the floor from the shopper toward the aisle spot.",
         "Light beam and pulsing ring on the rank-1 product, quieter rings on ranks 2-3.",
     ]),
-    ("09-intent-walk.png", "4. Prediction acted out", [
-        "Shopper samples a prediction and walks the path; panel and beacon follow the chosen target.",
-    ]),
     ("gaps", "Blindspots left", [
-        "Shelves read sparse in captures; dense stock preset (StoreDensity) in progress.",
-        "No before/after metric on screen: predicted vs actual pick hit rate per shopper.",
-        "No timeline of the basket: history of picks with the reason each was predicted.",
-        "Live BehaviorGPT result shown only as a source label; no side by side with heuristic.",
+        "Packed density hangs store generation in the simulator at 2%; captures use stocked.",
+        "Probabilities are flat (7-8%) over 32 SKUs; show share vs. uniform 3% or top-3 mass.",
+        "Panel and beacon too small at 3 m; needs a viewer-facing HUD or closer camera route.",
+        "Rank-1 shelf (Aisle 1) sits off-frame from the center aisle; camera should pan to it.",
         "Viewer has no store-level answer: which shelves this profile will hit (aisle heat for one person).",
     ]),
 ]

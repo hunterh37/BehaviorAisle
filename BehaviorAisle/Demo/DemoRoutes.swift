@@ -42,17 +42,57 @@ enum DemoRoutes {
                 await t.ready(); await t.wait(3); t.done()
             }
         }
+        b.group("plan") { b in
+            b.route("change", "One what-if change with its margin verdict", duration: 8, tags: ["hero"]) { t in
+                model.mode = .heuristic
+                if t.param("store") == "1" {
+                    await t.openImmersive(StoreSpace.id)
+                    while model.store == nil || model.loadProgress != nil { await t.wait(0.3) }
+                }
+                model.resetPlan()
+                let item = t.param("item") ?? "coffee"
+                switch t.param("kind") ?? "move" {
+                case "sale": model.toggleSale(item)
+                case "stock": model.toggleStock(item)
+                default: model.moveProduct(item, to: [0.6, 1.07, -3.1])
+                }
+                model.scrollTarget = "whatif"
+                while model.whatIfBusy { await t.wait(0.3) }
+                await t.wait(1.0)
+                await t.ready(); await t.wait(3); t.done()
+            }
+            b.route("test", "Whole plan: move, sale and stock-out tested together", duration: 10) { t in
+                model.mode = .heuristic
+                model.resetPlan()
+                model.moveProduct("coffee", to: [0.6, 1.07, -3.1])
+                model.toggleSale("chips")
+                model.toggleStock("soda")
+                model.runPlanTest()
+                model.scrollTarget = "plan"
+                await t.wait(0.5)
+                while model.planBusy { await t.wait(0.3) }
+                await t.wait(1.0)
+                await t.ready(); await t.wait(3); t.done()
+            }
+            b.route("validation", "Real-data check on Instacart baskets", duration: 5) { t in
+                model.scrollTarget = "validation"
+                await t.wait(1.2)
+                await t.ready(); await t.wait(3); t.done()
+            }
+        }
         b.group("store") { b in
             b.route("shopper", "Imported shopper with thought cloud, close", duration: 6, tags: ["hero"]) { t in
                 model.mode = .heuristic
                 model.showCards = t.param("cards") == "1"
                 model.showArcs = t.param("arcs") == "1"
                 model.showIntent = t.param("intent") == "1"
+                if let d = StoreDensity.Preset(rawValue: t.param("density") ?? "") { model.density = d.density }
                 await t.openImmersive(StoreSpace.id)
                 while model.store == nil || model.loadProgress != nil { await t.wait(0.3) }
                 if t.param("window") != "1" { t.dismissWindow("control") }
                 await model.spawnImported(Fixture.profile, Fixture.traits)
                 guard let s = model.shoppers.last else { throw DemoError.missing }
+                if t.param("solo") == "1" { for o in model.shoppers where o !== s { o.root.isEnabled = false } }
                 let dist = Float(t.param("dist", default: 2.6))
                 let x = Float(t.param("x", default: 0))
                 if t.param("walk") != "1" {

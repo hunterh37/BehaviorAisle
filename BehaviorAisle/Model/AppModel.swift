@@ -17,13 +17,9 @@ final class AppModel {
     var proxyURL: String = UserDefaults.standard.string(forKey: "proxyURL") ?? AppModel.defaultProxy {
         didSet { UserDefaults.standard.set(proxyURL, forKey: "proxyURL") }
     }
-    #if targetEnvironment(simulator)
-    static let defaultProxy = "http://127.0.0.1:8787/predict"
-    static let defaultMode = PredictorMode.live
-    #else
+    /// Empty proxy URL = call Unbox directly from the app with the bundled or Settings key.
     static let defaultProxy = ""
-    static let defaultMode = PredictorMode.heuristic
-    #endif
+    static let defaultMode = PredictorMode.live
     /// Shelf stock density; `applyDensity()` rebuilds the store with it.
     var density = StoreDensity.load() {
         didSet { density.save() }
@@ -45,10 +41,16 @@ final class AppModel {
     var forkId: String?
     var status = "Ready"
     var lastWhatIf: String?
+    /// Paired counterfactual for the last what-if change (heuristic, 10 x 30 shoppers).
+    var whatIfResult: Experiment.WhatIf?
+    var whatIfItem: String?
+    var whatIfBusy = false
     var callCount = 0
     /// Profile import pipeline state for ProfileImportView.
     var importStage: ImportStage = .idle
     var showAnalysis = false
+    /// Control window section to scroll to (demo routes and verdict taps).
+    var scrollTarget: String?
     var importedProfile: TwitterProfile?
     var importedTraits: ProfileTraits?
     var importedPersonas: [Persona] = []
@@ -74,7 +76,13 @@ final class AppModel {
     }
 
     var predictor: RoutedPredictor {
-        let live = URL(string: proxyURL).flatMap { $0.scheme?.hasPrefix("http") == true ? BehaviorGPTPredictor(endpoint: $0, token: token) : nil }
+        let live: (any Predictor)?
+        if let url = URL(string: proxyURL), url.scheme?.hasPrefix("http") == true {
+            live = BehaviorGPTPredictor(endpoint: url, token: token)
+        } else {
+            let key = token.isEmpty ? UnboxPredictor.bundledKey : token
+            live = key.isEmpty ? nil : UnboxPredictor(apiKey: key)
+        }
         return RoutedPredictor(mode: mode, live: live, heuristic: heuristic)
     }
 
@@ -101,12 +109,12 @@ final class AppModel {
         vizRoot.addChild(ghosts.root)
         vizRoot.addChild(heatmap.root)
         vizRoot.addChild(intents.root)
+        // Reopening the space rebuilds the store; drop the previous one so two stores never render.
+        storeHost.children.removeAll()
         storeHost.addChild(built.root)
         content.add(storeHost)
-        loadProgress = 0.92
-        loadStage = "Spawning shoppers"
-        await spawnShoppers()
         loadProgress = nil
+        Task { await spawnShoppers() }
         return built.root
     }
 
@@ -215,6 +223,8 @@ final class AppModel {
         forkId = nil
         ghosts.clear()
         lastWhatIf = nil
+        whatIfResult = nil
+        whatIfItem = nil
         Task { await spawnShoppers() }
     }
 
@@ -248,9 +258,10 @@ final class AppModel {
         s.phase = .thinking
         s.requestId += 1
         let rid = s.requestId
-        let req = PredictionRequest(personaId: s.persona.id, history: s.history, cart: s.cart, catalog: catalog)
+        let req = PredictionRequest(personaId: s.persona.id, history: s.history, cart: s.cart, catalog: catalog.filter(\.inStock))
         let pred = predictor
         callCount += 1
+        s.baseline = heuristic.rank(req, from: s.position).predictions
         Task {
             let result: PredictionResult
             do { result = try await pred.predict(req) } catch {
@@ -299,6 +310,8 @@ final class AppModel {
     func finishPick(_ s: ShopperAgent) {
         guard let t = s.target else { request(s); return }
         s.history.append(BehaviorEvent(t.action, t.itemId))
+        let rank = s.predictions.firstIndex { $0.id == t.id } ?? s.predictions.count
+        s.log.append(.init(itemId: t.itemId, action: t.action, p: t.p, rank: rank, source: s.source))
         if t.action == .addToCart { s.cart.append(t.itemId) }
         s.look(at: nil)
         s.express(.neutral)
@@ -326,6 +339,8 @@ final class AppModel {
 
     func moveProduct(_ id: String, to world: SIMD3<Float>) {
         guard let i = catalog.firstIndex(where: { $0.id == id }) else { return }
+        let before = catalog
+        defer { measureWhatIf(before, item: id) }
         let row = StoreLayout.gondolaRows.min { abs($0 - world.x) < abs($1 - world.x) } ?? 0
         let side: Float = world.x < row ? -1 : 1
         let z = min(StoreLayout.runStart, max(StoreLayout.runEnd, world.z))
@@ -339,9 +354,72 @@ final class AppModel {
 
     func toggleSale(_ id: String) {
         guard let i = catalog.firstIndex(where: { $0.id == id }) else { return }
+        let before = catalog
+        defer { measureWhatIf(before, item: id) }
         catalog[i].onSale.toggle()
         lastWhatIf = (catalog[i].onSale ? "Sale on " : "Sale off ") + catalog[i].name
         refreshSaleSigns()
+        requery()
+    }
+
+    /// Empties or restocks a SKU's shelf slot; shoppers re-plan without it.
+    func toggleStock(_ id: String) {
+        guard let i = catalog.firstIndex(where: { $0.id == id }) else { return }
+        let before = catalog
+        defer { measureWhatIf(before, item: id) }
+        catalog[i].inStock.toggle()
+        store?.slots[id]?.isEnabled = catalog[i].inStock
+        lastWhatIf = (catalog[i].inStock ? "Restocked " : "Out of stock: ") + catalog[i].name
+        requery()
+    }
+
+    /// Runs the before/after layouts on the same seeded shoppers and stores the per-SKU effect.
+    func measureWhatIf(_ before: [Product], item: String) {
+        let after = catalog
+        whatIfBusy = true
+        whatIfItem = item
+        Task {
+            let r = await Task.detached(priority: .userInitiated) {
+                Experiment.whatIf(base: before, variant: after, replicates: 30, shoppers: 50)
+            }.value
+            guard whatIfItem == item else { return }
+            whatIfResult = r
+            whatIfBusy = false
+        }
+    }
+
+    // MARK: Plan test
+
+    /// Whole-plan test: the opening layout vs every move and sale made since, on the same seeded shoppers.
+    var planResult: Experiment.WhatIf?
+    var planBusy = false
+    var planChanges: Int {
+        let base = Dictionary(uniqueKeysWithValues: Catalog.laidOut().map { ($0.id, $0) })
+        return catalog.filter { p in base[p.id].map { $0.anchor != p.anchor || $0.onSale != p.onSale || $0.inStock != p.inStock } ?? true }.count
+    }
+
+    func runPlanTest() {
+        let before = Catalog.laidOut(), after = catalog
+        planBusy = true
+        Task {
+            planResult = await Task.detached(priority: .userInitiated) {
+                Experiment.whatIf(base: before, variant: after, replicates: 40, shoppers: 50)
+            }.value
+            planBusy = false
+        }
+    }
+
+    /// Restores the opening layout and removes sale signs.
+    func resetPlan() {
+        catalog = Catalog.laidOut()
+        for p in catalog {
+            store?.slots[p.id]?.position = p.anchor - SIMD3(0, 0.12, 0)
+            store?.slots[p.id]?.isEnabled = true
+        }
+        refreshSaleSigns()
+        planResult = nil
+        whatIfResult = nil
+        lastWhatIf = nil
         requery()
     }
 

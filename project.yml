@@ -25,6 +25,7 @@ targets:
       path: Support/Info.plist
       properties:
         CFBundleDisplayName: Behavior Aisle
+        UnboxAPIKey: $(UNBOXAI_API_KEY)
         ITSAppUsesNonExemptEncryption: false
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
@@ -33,6 +34,9 @@ targets:
           UIApplicationPreferredDefaultSceneSessionRole: UIWindowSceneSessionRoleApplication
           UIApplicationSupportsMultipleScenes: true
           UISceneConfigurations: {}
+    configFiles:
+      Debug: Support/Secrets.xcconfig
+      Release: Support/Secrets.xcconfig
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: org.dicyaninlabs.behavioraisle
@@ -54,6 +58,8 @@ targets:
       - BehaviorAisle/Model/StoreLayout.swift
       - BehaviorAisle/Predict/Prediction.swift
       - BehaviorAisle/Predict/HeuristicPredictor.swift
+      - BehaviorAisle/Predict/Experiment.swift
+      - BehaviorAisle/Predict/IntentExplainer.swift
       - BehaviorAisle/Profile/ProfileTraits.swift
     settings:
       base:

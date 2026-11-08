@@ -1,0 +1,15 @@
+{
+ "bundleId": "org.dicyaninlabs.behavioraisle",
+ "scheme": "BehaviorAisle",
+ "settleSeconds": 0.5,
+ "timeoutSeconds": 300,
+ "shots": [
+  {"id": "p1-store", "route": "store/shopper", "at": 0.5, "params": {"dist": "3.4", "x": "0", "intent": "1", "density": "stocked", "solo": "1"}, "caption": "Shoppers predicted by BehaviorGPT"},
+  {"id": "p2-profile", "route": "profile/result", "at": 0.5, "caption": "Shopper from a real profile"},
+  {"id": "p3-move", "route": "plan/change", "at": 0.5, "params": {"kind": "move", "item": "coffee"}, "caption": "Move a product"},
+  {"id": "p4-sale", "route": "plan/change", "at": 0.5, "params": {"kind": "sale", "item": "chips"}, "caption": "Test a promotion"},
+  {"id": "p5-stockout", "route": "plan/change", "at": 0.5, "params": {"kind": "stock", "item": "soda"}, "caption": "Price a stock-out"},
+  {"id": "p6-plan", "route": "plan/test", "at": 0.5, "caption": "Test the whole plan"},
+  {"id": "p7-validation", "route": "plan/validation", "at": 0.5, "caption": "Checked on real baskets"}
+ ]
+}

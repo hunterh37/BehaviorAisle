@@ -48,18 +48,20 @@ struct StoreSpace: View {
         for s in model.shoppers {
             guard let card = attachments.entity(for: s.id) else { continue }
             card.isEnabled = model.showCards || (s.traits != nil && model.showIntent)
+            if s.traits != nil, card.scale.x < 1.5 { card.scale = .init(repeating: 1.8) }
             if let tag = attachments.entity(for: Self.beaconId(s)) {
                 let beacon = model.intents.beacon(s.id)
                 tag.isEnabled = model.showIntent && beacon != nil
                 if let beacon, tag.parent !== beacon {
                     beacon.addChild(tag)
                     tag.position = .zero
+                    tag.scale = .init(repeating: 2)
                     tag.components.set(BillboardComponent())
                 }
             }
             if card.parent !== s.root {
                 s.root.addChild(card)
-                card.position = s.traits != nil ? [0.85, 1.75, 0] : [0, 2.15, 0]
+                card.position = s.traits != nil ? [0, 3.1, 0] : [0, 2.15, 0]
                 card.components.set(BillboardComponent())
             }
         }

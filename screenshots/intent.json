@@ -4,11 +4,46 @@
  "settleSeconds": 0.5,
  "timeoutSeconds": 300,
  "shots": [
-  {"id": "07-intent-hero", "route": "store/shopper", "at": 0.5,
-   "params": {"dist": "2.8", "x": "-0.5", "intent": "1"}, "caption": "Interests to predicted items"},
-  {"id": "08-intent-path", "route": "store/shopper", "at": 0.5,
-   "params": {"dist": "3.6", "x": "-0.6", "intent": "1", "yaw": "20"}, "caption": "Path to the next shelf"},
-  {"id": "09-intent-walk", "route": "store/shopper", "at": 0.5,
-   "params": {"dist": "2.6", "intent": "1", "walk": "1", "settle": "3"}, "caption": "Shopper heads to the beacon"}
+  {
+   "id": "07-intent-hero",
+   "route": "store/shopper",
+   "at": 0.5,
+   "params": {
+    "dist": "3.4",
+    "x": "0",
+    "intent": "1",
+    "density": "stocked",
+    "solo": "1"
+   },
+   "caption": "Interests to predicted items"
+  },
+  {
+   "id": "08-intent-path",
+   "route": "store/shopper",
+   "at": 0.5,
+   "params": {
+    "dist": "4.2",
+    "x": "0",
+    "intent": "1",
+    "yaw": "0",
+    "density": "stocked",
+    "solo": "1"
+   },
+   "caption": "Path to the next shelf"
+  },
+  {
+   "id": "09-intent-walk",
+   "route": "store/shopper",
+   "at": 0.5,
+   "params": {
+    "dist": "2.6",
+    "intent": "1",
+    "walk": "1",
+    "settle": "3",
+    "density": "stocked",
+    "solo": "1"
+   },
+   "caption": "Shopper heads to the beacon"
+  }
  ]
 }

@@ -69,3 +69,6 @@ AuthKey_*.p8
 *.swp
 *~
 .claude/settings.local.json
+
+Support/Secrets.xcconfig
+tools/__pycache__/

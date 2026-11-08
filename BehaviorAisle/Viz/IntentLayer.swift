@@ -47,7 +47,7 @@ final class IntentLayer {
         let pts = [start] + StoreLayout.path(from: start, to: end)
         var dotMat = UnlitMaterial(color: color)
         dotMat.blending = .transparent(opacity: 0.9)
-        let dotMesh = MeshResource.generateCylinder(height: 0.006, radius: 0.045)
+        let dotMesh = Self.dotMesh
         var carried: Float = 0.3
         for i in 1..<pts.count {
             let a = pts[i - 1], b = pts[i]
@@ -122,7 +122,19 @@ final class IntentLayer {
     }
 
     /// Flat annulus in the XZ plane, double sided.
+    private static let dotMesh = MeshResource.generateCylinder(height: 0.006, radius: 0.045)
+    private static var ringCache: [SIMD3<Float>: MeshResource] = [:]
+
+    /// Cached: intent groups rebuild on every prediction, the ring sizes are fixed.
     static func ring(inner: Float, outer: Float, segments: Int = 48) -> MeshResource {
+        let key = SIMD3(inner, outer, Float(segments))
+        if let m = ringCache[key] { return m }
+        let m = makeRing(inner: inner, outer: outer, segments: segments)
+        ringCache[key] = m
+        return m
+    }
+
+    private static func makeRing(inner: Float, outer: Float, segments: Int) -> MeshResource {
         var pos: [SIMD3<Float>] = [], idx: [UInt32] = []
         for i in 0...segments {
             let a = Float(i) / Float(segments) * 2 * .pi

@@ -1,0 +1,34 @@
+Behavior Aisle: real-data validation and plan test
+
+Validation (tools/validate_instacart.py, Instacart train split, 600 held-out basket prefixes)
+Task: given the SKUs added to the cart so far, predict the next SKU (32 SKUs).
+
+Model              hit@1   hit@3   MRR
+Random             2.5%    9.3%    0.127
+Popularity         7.7%    23.8%   0.231
+Co-occurrence      8.7%    25.2%   0.242
+Hand-set heuristic 2.7%    10.5%   0.139
+Fitted heuristic   8.3%    25.2%   0.240
+BehaviorGPT        4.7%    12.5%   0.163
+
+BehaviorGPT minus hand-set heuristic, hit@3: +2.0 pts, 95% CI -1.7 to +6.0 (no significant gain).
+Fitted minus hand-set heuristic, hit@3: +14.7 pts, 95% CI +10.3 to +19.3.
+
+Reading: the original heuristic is near random on real baskets. BehaviorGPT through the shop/recommend
+endpoint is below plain popularity on this task. Adding popularity and co-occurrence fitted on real
+baskets brings the heuristic level with the best baseline. Shelf height, sale and distance effects still
+have no real data behind them.
+
+App changes
+- HeuristicPredictor.swift: new `fitted` term (Instacart log popularity + log P(next | cart)),
+  loaded from Resources/fitted_terms.json; drives shoppers, what-if and plan test.
+- Experiment.swift: WhatIf now reports revenue per 100 shoppers, paired revenue delta with 95% CI,
+  and discount cost of sale items.
+- AppModel.swift: runPlanTest() (opening layout vs current plan, 16x40 paired shoppers), resetPlan().
+- UI/PlanTestView.swift: "Plan test" panel (revenue, items/basket, meters, discount, top SKU shifts)
+  and "Real-data check" panel (hit@3 bars, CIs) in the main window.
+- Resources/validation.json, fitted_terms.json bundled.
+
+Rerun: set -a; source ~/.config/behavioraisle/env; set +a; python3 tools/validate_instacart.py --n 600
+Data: ~/Dev/BehaviorAisle-data/instacart (HF mirror attik/Instacart-Market-Basket-Analysis).
+Not done: Dunnhumby (requires registration), cross-order history (needs 577 MB prior file).

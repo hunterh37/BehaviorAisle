@@ -31,12 +31,17 @@ struct IntentPanel: View {
             if lines.isEmpty {
                 HStack { ProgressView(); Text("Predicting").foregroundStyle(.secondary) }
             }
+            if shopper.source != "heuristic", !shopper.baseline.isEmpty, !lines.isEmpty {
+                BaselineRow(shopper: shopper)
+            }
+            if !shopper.log.isEmpty {
+                BasketTimeline(shopper: shopper, color: c)
+            }
         }
         .padding(22)
         .frame(width: 440)
         .glassBackgroundEffect(in: .rect(cornerRadius: Theme.corner))
         .overlay(alignment: .top) { Capsule().fill(c).frame(width: 80, height: 4).padding(.top, 1) }
-        .animation(.smooth, value: lines)
     }
 }
 
@@ -72,6 +77,58 @@ private struct IntentRow: View {
         }
         .padding(12)
         .background(isNext ? color.opacity(0.14) : .clear, in: .rect(cornerRadius: 14))
+    }
+}
+
+/// Heuristic top 3 for the same context, with overlap against the live model's top 3.
+private struct BaselineRow: View {
+    @Environment(AppModel.self) private var model
+    let shopper: ShopperAgent
+
+    var body: some View {
+        let live = Set(shopper.predictions.prefix(3).map(\.itemId))
+        let base = shopper.baseline.prefix(3)
+        let overlap = base.filter { live.contains($0.itemId) }.count
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text("Heuristic baseline").font(.caption.weight(.semibold)).textCase(.uppercase).foregroundStyle(.secondary)
+                Spacer()
+                Text("\(overlap)/3 agree").font(.callout.weight(.bold).monospacedDigit())
+            }
+            Text(base.map { model.product($0.itemId)?.name ?? "Checkout" }.joined(separator: " · "))
+                .font(.callout).foregroundStyle(.secondary).lineLimit(1)
+        }
+    }
+}
+
+/// Executed picks, newest first, with the rank each had when predicted and the top-1 hit count.
+private struct BasketTimeline: View {
+    @Environment(AppModel.self) private var model
+    let shopper: ShopperAgent
+    let color: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Basket").font(.caption.weight(.semibold)).textCase(.uppercase).foregroundStyle(.secondary)
+                Spacer()
+                Text("Top-1 \(shopper.topHits)/\(shopper.log.count)")
+                    .font(.callout.weight(.bold).monospacedDigit())
+                    .contentTransition(.numericText())
+            }
+            ForEach(shopper.log.suffix(4).reversed()) { pick in
+                HStack(spacing: 8) {
+                    Image(systemName: pick.action == .addToCart ? "cart.fill" : pick.action == .checkout ? "creditcard" : "eye")
+                        .foregroundStyle(color)
+                    Text(model.product(pick.itemId)?.name ?? "Checkout").lineLimit(1)
+                    Spacer(minLength: 6)
+                    Text("#\(pick.rank + 1) · \(pick.p, format: .percent.precision(.fractionLength(0)))")
+                        .monospacedDigit().foregroundStyle(.secondary)
+                }
+                .font(.callout)
+            }
+        }
+        .padding(.top, 4)
     }
 }
 

@@ -1,0 +1,73 @@
+{
+  "dataset": "Instacart Market Basket (order_products__train)",
+  "orders": 121394,
+  "mapped_products": 14363,
+  "baskets": 79785,
+  "train_baskets": 63713,
+  "test_prefixes": 600,
+  "task": "next new SKU added to cart, given the SKUs added before it (32 SKUs)",
+  "scores": [
+    {
+      "name": "Random",
+      "hit1": 0.025,
+      "hit3": 0.09333333333333334,
+      "mrr": 0.12662419869085578,
+      "n": 600
+    },
+    {
+      "name": "Popularity",
+      "hit1": 0.07666666666666666,
+      "hit3": 0.23833333333333334,
+      "mrr": 0.23052679921474975,
+      "n": 600
+    },
+    {
+      "name": "Co-occurrence",
+      "hit1": 0.08666666666666667,
+      "hit3": 0.25166666666666665,
+      "mrr": 0.242350424829931,
+      "n": 600
+    },
+    {
+      "name": "Heuristic",
+      "hit1": 0.02666666666666667,
+      "hit3": 0.105,
+      "mrr": 0.1387636174423726,
+      "n": 600
+    },
+    {
+      "name": "Fitted heuristic",
+      "hit1": 0.08333333333333333,
+      "hit3": 0.25166666666666665,
+      "mrr": 0.23976170502884112,
+      "n": 600
+    },
+    {
+      "name": "BehaviorGPT",
+      "hit1": 0.04666666666666667,
+      "hit3": 0.125,
+      "mrr": 0.16283078682666413,
+      "n": 600
+    }
+  ],
+  "category_share": {
+    "bakery": 0.045,
+    "beverages": 0.0953,
+    "dairy": 0.2553,
+    "frozen": 0.0445,
+    "household": 0.0271,
+    "pantry": 0.1396,
+    "produce": 0.3138,
+    "snacks": 0.0793
+  },
+  "behaviorgpt_minus_heuristic_hit3": {
+    "delta": 0.02,
+    "lo": -0.016666666666666666,
+    "hi": 0.06
+  },
+  "fitted_minus_heuristic_hit3": {
+    "delta": 0.14666666666666667,
+    "lo": 0.10333333333333333,
+    "hi": 0.19333333333333333
+  }
+}

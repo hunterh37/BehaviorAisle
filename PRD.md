@@ -34,6 +34,9 @@ Users: retail merchandisers and category managers, store planners, hackathon jud
 | What-if merchandising | Drag a product to a new shelf slot or long-press for a sale sign (20% off); all shoppers re-query | AppModel.moveProduct, toggleSale |
 | Heatmap | 50 simulated shoppers, 14 steps each, accumulated into a 0.25 m floor grid texture | Viz/HeatmapLayer.swift |
 | Checkout anomaly | Red badge when the basket is unusual for the persona (model score, or share of off-affinity items) | PredictionCard, HeuristicPredictor.anomaly |
+| What-if effect | Paired simulation (same seeds, base vs changed store) reports carts per 100 shoppers per SKU with 95% CI | Predict/Experiment.swift, ControlView.WhatIfEffects |
+| Evidence panel | Basket timeline with each pick's predicted rank, top-1 hit count, heuristic baseline agreement | UI/IntentPanel.swift |
+| Experiments | Next-action hit@k/MRR vs random and popularity, term ablations, anomaly AUROC; writes demo/results.json | BehaviorAisleTests/ExperimentTests.swift, tools/make_paper_pdf.py |
 | Prediction sources | BehaviorGPT via proxy, replay log, local heuristic; live falls back to replay, then heuristic | Predict/ |
 
 ## Prediction contract

@@ -10,6 +10,7 @@ struct ControlView: View {
     @State private var handle = ""
 
     var body: some View {
+        ScrollViewReader { proxy in
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
                 header
@@ -17,9 +18,17 @@ struct ControlView: View {
                 stats
                 shoppersSection
                 importSection
-                whatIfSection
+                whatIfSection.id("whatif")
+                Section { PlanTestSection() } header: { SectionHeader("Plan test") }.id("plan")
+                Section { ValidationSection() } header: { SectionHeader("Real-data check") }.id("validation")
             }
             .padding(28)
+            .padding(.bottom, 90)
+        }
+        .onChange(of: model.scrollTarget) { _, t in
+            guard let t else { return }
+            withAnimation { proxy.scrollTo(t, anchor: .top) }
+        }
         }
         .ornament(attachmentAnchor: .scene(.bottom)) { overlayBar }
         .sheet(isPresented: $showSettings) { SettingsSheet() }
@@ -169,12 +178,31 @@ struct ControlView: View {
     private var whatIfSection: some View {
         Section {
             VStack(alignment: .leading, spacing: 10) {
-                Text(model.lastWhatIf ?? "Drag a product to move it. Long-press for a sale sign.")
-                    .font(.callout)
-                    .foregroundStyle(model.lastWhatIf == nil ? .secondary : .primary)
+                HStack {
+                    if model.whatIfResult == nil || model.whatIfBusy {
+                        Text(model.lastWhatIf ?? "Drag a product to move it. Long-press for a sale sign.")
+                            .font(.callout)
+                            .foregroundStyle(model.lastWhatIf == nil ? .secondary : .primary)
+                    }
+                    Spacer()
+                    Menu("Stock out", systemImage: "shippingbox") {
+                        ForEach(model.catalog) { p in
+                            Button(p.inStock ? p.name : "Restock \(p.name)") { model.toggleStock(p.id) }
+                        }
+                    }
+                }
                 let sale = model.catalog.filter(\.onSale)
                 if !sale.isEmpty {
                     FlowChips(items: sale.map { "\($0.name) −20%" }, color: Theme.amber)
+                }
+                let out = model.catalog.filter { !$0.inStock }
+                if !out.isEmpty {
+                    FlowChips(items: out.map { "\($0.name) out" }, color: Color(hex: 0xFF8C8C))
+                }
+                if model.whatIfBusy {
+                    HStack { ProgressView(); Text("Simulating 1,500 paired shoppers").foregroundStyle(.secondary) }.font(.callout)
+                } else if let r = model.whatIfResult {
+                    WhatIfEffects(result: r, item: model.whatIfItem)
                 }
             }
             .padding(16)
@@ -345,6 +373,48 @@ private struct FlowChips: View {
     }
 }
 
+/// Per-SKU effect of the last what-if: carts per 100 shoppers, change and 95% CI from paired seeds.
+private struct WhatIfEffects: View {
+    @Environment(AppModel.self) private var model
+    let result: Experiment.WhatIf
+    let item: String?
+
+    var body: some View {
+        let focus = result.effects.first { $0.itemId == item }
+        let others = result.effects.filter { $0.itemId != item && abs($0.delta) > $0.ci }.prefix(3)
+        let stockOut = item.flatMap { model.product($0) }.map { !$0.inStock } ?? false
+        VStack(alignment: .leading, spacing: 8) {
+            VerdictCard(result: result, title: model.lastWhatIf ?? "Change")
+            if let item, stockOut {
+                let r = result.recapture(item)
+                if r.lost > 0.05 {
+                    Text(String(format: "%.0f%% of lost units switched to other SKUs, %.0f%% walked away",
+                                r.recaptured / r.lost * 100, (1 - r.recaptured / r.lost) * 100))
+                        .font(.callout)
+                }
+            } else if let item {
+                let n = result.netLift(item, catalog: model.catalog)
+                if !n.losers.isEmpty {
+                    Text(String(format: "Net lift %+.1f units: %+.1f gained, %.1f taken from %@", n.gain + n.cannibal, n.gain, n.cannibal,
+                                n.losers.prefix(2).compactMap { model.product($0.itemId)?.name }.joined(separator: ", ")))
+                        .font(.callout)
+                }
+            }
+            ForEach([focus].compactMap { $0 } + others, id: \.itemId) { e in
+                HStack {
+                    Text(model.product(e.itemId)?.name ?? e.itemId).lineLimit(1)
+                    Spacer()
+                    Text(String(format: "%+.1f ± %.1f", e.delta, e.ci)).monospacedDigit()
+                        .foregroundStyle(e.delta > e.ci ? Theme.accent : e.delta < -e.ci ? Theme.amber : .secondary)
+                }
+                .font(e.itemId == item ? .headline : .callout)
+            }
+            Text("Units per 100 shoppers · basket \(result.basketBase, specifier: "%.2f") → \(result.basketVariant, specifier: "%.2f")")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+    }
+}
+
 private struct OrnamentToggle: View {
     let icon: String
     let label: String
@@ -390,13 +460,13 @@ private struct SettingsSheet: View {
                     Button("Restock store") { Task { await model.applyDensity() } }
                         .disabled(model.store == nil || model.loadProgress != nil)
                 }
-                Section("BehaviorGPT proxy") {
-                    TextField("https://proxy.example.workers.dev/predict", text: $model.proxyURL)
-                        .textInputAutocapitalization(.never).autocorrectionDisabled()
-                    SecureField("Proxy token", text: $tokenDraft)
+                Section("BehaviorGPT") {
+                    SecureField("Unbox API key", text: $tokenDraft)
                         .onSubmit { model.token = tokenDraft; tokenDraft = "" }
-                    Button("Save token") { model.token = tokenDraft; tokenDraft = "" }
+                    Button("Save key") { model.token = tokenDraft; tokenDraft = "" }
                         .disabled(tokenDraft.isEmpty)
+                    TextField("Proxy URL (optional)", text: $model.proxyURL)
+                        .textInputAutocapitalization(.never).autocorrectionDisabled()
                 }
             }
             .navigationTitle("Settings")

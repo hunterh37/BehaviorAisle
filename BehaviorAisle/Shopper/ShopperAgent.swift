@@ -9,6 +9,15 @@ import HumanKit
 @MainActor
 @Observable
 final class ShopperAgent: Identifiable {
+    struct Pick: Identifiable, Hashable {
+        let id = UUID()
+        let itemId: String
+        let action: BehaviorAction
+        let p: Double
+        let rank: Int
+        let source: String
+    }
+
     enum Phase: Equatable { case thinking, walking, picking, checkingOut, done }
 
     let id: String
@@ -22,6 +31,11 @@ final class ShopperAgent: Identifiable {
     var anomaly: Double?
     var phase: Phase = .thinking
     var target: Prediction?
+    /// Executed actions in order with the rank and probability they had when chosen.
+    var log: [Pick] = []
+    /// Heuristic top 3 for the same context, shown beside the live model to show what it adds.
+    var baseline: [Prediction] = []
+    var topHits: Int { log.filter { $0.rank == 0 }.count }
     var frozen = false
     /// Set for shoppers imported from an X profile.
     let spec: HumanSpec?
@@ -112,15 +126,4 @@ final class ShopperAgent: Identifiable {
 }
 
 /// Deterministic RNG.
-struct SplitMix {
-    var state: UInt64
-    init(seed: UInt64) { state = seed }
-    mutating func next() -> UInt64 {
-        state &+= 0x9E3779B97F4A7C15
-        var z = state
-        z = (z ^ (z >> 30)) &* 0xBF58476D1CE4E5B9
-        z = (z ^ (z >> 27)) &* 0x94D049BB133111EB
-        return z ^ (z >> 31)
-    }
-    mutating func nextDouble() -> Double { Double(next() >> 11) / Double(1 << 53) }
-}
+
