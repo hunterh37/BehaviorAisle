@@ -14,9 +14,9 @@ enum StoreLayout {
     static let gondolaDepth: Float = 0.9
     static let shelfLevels: [Float] = [0.15, 0.55, 0.95, 1.35]
     static let entrance = SIMD3<Float>(-4, 0, -1.2)
-    static let checkout = SIMD3<Float>(4.8, 0, -1.5)
-    static let checkoutStand = SIMD3<Float>(4, 0, -1.5)
-    static let bounds = (min: SIMD2<Float>(-6, -12), max: SIMD2<Float>(7, 0))
+    static let checkout = SIMD3<Float>(4.4, 0, -1.5)
+    static let checkoutStand = SIMD3<Float>(3.6, 0, -1.5)
+    static let bounds = (min: SIMD2<Float>(-10, -12), max: SIMD2<Float>(10, 2))
 
     /// Section centers along one gondola run.
     static var sectionZ: [Float] {

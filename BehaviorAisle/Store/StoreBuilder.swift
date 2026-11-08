@@ -76,7 +76,7 @@ enum StoreBuilder {
     }
 
     static func addFixtures(to root: Entity) async {
-        let gondola = try? await RealityHD.entity("gondola-shelf", grabbable: false)
+        let gondola = try? await RealityHD.entity("grocery-gondola", grabbable: false)
         for x in StoreLayout.gondolaRows {
             for z in StoreLayout.sectionZ {
                 let g = gondola?.clone(recursive: true) ?? fallbackGondola()
