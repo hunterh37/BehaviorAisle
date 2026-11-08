@@ -193,6 +193,7 @@ struct ControlView: View {
             OrnamentToggle(icon: "rectangle.on.rectangle", label: "Cards", isOn: $model.showCards)
             OrnamentToggle(icon: "point.topleft.down.to.point.bottomright.curvepath", label: "Arcs", isOn: $model.showArcs)
             OrnamentToggle(icon: "exclamationmark.triangle", label: "Anomaly", isOn: $model.showAnomaly)
+            OrnamentToggle(icon: "scope", label: "Intent", isOn: $model.showIntent)
             Divider().frame(height: 28)
             Button {
                 if model.heatmapOn { model.hideHeatmap() } else { model.runHeatmap() }
@@ -370,6 +371,25 @@ private struct SettingsSheet: View {
                     }
                     .pickerStyle(.segmented)
                 }
+                Section("Shelf stock") {
+                    Picker("Preset", selection: Binding(
+                        get: { model.density.preset },
+                        set: { if let p = $0 { model.density = p.density } })) {
+                        ForEach(StoreDensity.Preset.allCases) { Text($0.label).tag(Optional($0)) }
+                    }
+                    .pickerStyle(.segmented)
+                    LabeledContent("Fill \(Int(model.density.fill * 100))%") {
+                        Slider(value: $model.density.fill, in: 0...1)
+                    }
+                    LabeledContent("Packing \(Int(model.density.packing * 100))%") {
+                        Slider(value: $model.density.packing, in: 0...1)
+                    }
+                    Stepper("Depth \(model.density.depth) deep", value: $model.density.depth, in: 1...6)
+                    Stepper("Facings per item \(model.density.skuFacings)", value: $model.density.skuFacings, in: 1...7)
+                    Toggle("Overstock", isOn: $model.density.overstock)
+                    Button("Restock store") { Task { await model.applyDensity() } }
+                        .disabled(model.store == nil || model.loadProgress != nil)
+                }
                 Section("BehaviorGPT proxy") {
                     TextField("https://proxy.example.workers.dev/predict", text: $model.proxyURL)
                         .textInputAutocapitalization(.never).autocorrectionDisabled()
@@ -384,7 +404,7 @@ private struct SettingsSheet: View {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             }
         }
-        .frame(width: 520, height: 420)
+        .frame(width: 560, height: 680)
     }
 }
 

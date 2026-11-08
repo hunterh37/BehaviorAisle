@@ -16,12 +16,19 @@ enum StoreBuilder {
     }
 
     /// `progress(fraction, stage)` reports 0...1 as the shell, fixtures and products load.
-    static func build(catalog: [Product], progress: (Double, String) -> Void = { _, _ in }) async -> Built {
+    static func build(catalog: [Product], density: StoreDensity = .default,
+                      progress: (Double, String) -> Void = { _, _ in }) async -> Built {
         progress(0.02, "Loading store")
         let root = Entity()
         root.name = "store"
         var env: RealEnvironment?
-        if let shell = try? await RealityHD.scene("grocery-store") {
+        let spec = GroceryStore().with {
+            $0.stockFill = density.fill
+            $0.stockDepth = density.depth
+            $0.packing = density.packing
+            $0.overstock = density.overstock
+        }
+        if let shell = try? await RealityHD.scene(spec) {
             root.addChild(shell)
         } else {
             root.addChild(fallbackShell())
@@ -40,7 +47,7 @@ enum StoreBuilder {
                 proto = (try? await RealityHD.entity(p.asset, grabbable: false)) ?? placeholder(p)
                 protos[p.asset] = proto
             }
-            let slot = makeSlot(p, proto: proto)
+            let slot = makeSlot(p, proto: proto, facings: density.skuFacings, deep: density.depth >= 4 ? 2 : 1)
             root.addChild(slot)
             slots[p.id] = slot
         }
@@ -50,21 +57,27 @@ enum StoreBuilder {
         return Built(root: root, slots: slots, env: env)
     }
 
-    /// Container named sku:<id> holding three facings, tappable and draggable.
-    static func makeSlot(_ p: Product, proto: Entity) -> Entity {
+    /// Container named sku:<id> holding `facings` across and `deep` rows back, tappable and draggable.
+    static func makeSlot(_ p: Product, proto: Entity, facings: Int = 3, deep: Int = 1) -> Entity {
         let slot = Entity()
         slot.name = skuPrefix + p.id
         slot.position = p.anchor - SIMD3(0, 0.12, 0)
         let face: Float = p.anchor.x > p.stand.x ? -1 : 1
         let b = proto.visualBounds(relativeTo: nil)
-        let w = max(b.extents.z, 0.06) + 0.02
-        for i in -1...1 {
-            let c = proto.clone(recursive: true)
-            c.position = SIMD3(0, -b.min.y, Float(i) * w)
-            c.orientation = simd_quatf(angle: face > 0 ? .pi / 2 : -.pi / 2, axis: [0, 1, 0])
-            slot.addChild(c)
+        let w = max(b.extents.z, 0.06) + 0.008
+        let d = max(b.extents.x, 0.06) + 0.008
+        let n = max(facings, 1)
+        let span = min(Float(n) * w, StoreLayout.sectionLength - 0.04)
+        let step = n > 1 ? (span - w) / Float(n - 1) : 0
+        for r in 0..<max(deep, 1) {
+            for i in 0..<n {
+                let c = proto.clone(recursive: true)
+                c.position = SIMD3(-face * (Float(r) + 0.5) * d, -b.min.y, (Float(i) - Float(n - 1) / 2) * step)
+                c.orientation = simd_quatf(angle: face > 0 ? .pi / 2 : -.pi / 2, axis: [0, 1, 0])
+                slot.addChild(c)
+            }
         }
-        let size = SIMD3<Float>(0.3, max(b.extents.y, 0.1) + 0.05, w * 3)
+        let size = SIMD3<Float>(0.3, max(b.extents.y, 0.1) + 0.05, span)
         slot.components.set(CollisionComponent(shapes: [.generateBox(size: size).offsetBy(translation: [0, size.y / 2, 0])]))
         slot.components.set(InputTargetComponent())
         slot.components.set(HoverEffectComponent())

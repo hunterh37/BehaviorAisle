@@ -28,7 +28,12 @@ struct StoreSpace: View {
         } attachments: {
             Attachment(id: Self.loadingId) { LoadingBar() }
             ForEach(model.shoppers) { s in
-                Attachment(id: s.id) { PredictionCard(shopper: s) }
+                Attachment(id: s.id) {
+                    if s.traits != nil && model.showIntent { IntentPanel(shopper: s) } else { PredictionCard(shopper: s) }
+                }
+                if s.traits != nil {
+                    Attachment(id: Self.beaconId(s)) { BeaconLabel(shopper: s) }
+                }
             }
         }
         .gesture(tap)
@@ -42,10 +47,19 @@ struct StoreSpace: View {
     private func attachCards(_ attachments: RealityViewAttachments) {
         for s in model.shoppers {
             guard let card = attachments.entity(for: s.id) else { continue }
-            card.isEnabled = model.showCards
+            card.isEnabled = model.showCards || (s.traits != nil && model.showIntent)
+            if let tag = attachments.entity(for: Self.beaconId(s)) {
+                let beacon = model.intents.beacon(s.id)
+                tag.isEnabled = model.showIntent && beacon != nil
+                if let beacon, tag.parent !== beacon {
+                    beacon.addChild(tag)
+                    tag.position = .zero
+                    tag.components.set(BillboardComponent())
+                }
+            }
             if card.parent !== s.root {
                 s.root.addChild(card)
-                card.position = [0, s.traits != nil ? 2.7 : 2.15, 0]
+                card.position = s.traits != nil ? [0.85, 1.75, 0] : [0, 2.15, 0]
                 card.components.set(BillboardComponent())
             }
         }
@@ -80,6 +94,7 @@ struct StoreSpace: View {
     }
 
     static let loadingId = "loading"
+    static func beaconId(_ s: ShopperAgent) -> String { "beacon:" + s.id }
 
     static func tagged(_ e: Entity, prefix: String) -> String? {
         var cur: Entity? = e

@@ -37,4 +37,15 @@ final class PredictorTests: XCTestCase {
         let r = h.rank(PredictionRequest(personaId: p.id, history: p.seedHistory, cart: [], catalog: Catalog.laidOut()), from: nil)
         XCTAssertEqual(r.predictions.count, 3)
     }
+
+    func testIntentExplainerTiesInterestToItem() {
+        let t = ProfileTraits(body: .neutral, affinity: ["bakery": 0.9], priceSensitivity: 0.3, basketSize: 6,
+                              wishlist: ["bread"], interests: ["running", "sourdough"], summary: "")
+        let preds = [Prediction(itemId: "bread", action: .addToCart, p: 0.5),
+                     Prediction(itemId: Prediction.checkoutId, action: .checkout, p: 0.2)]
+        let lines = IntentExplainer.explain(preds, traits: t, catalog: Catalog.laidOut())
+        XCTAssertEqual(lines.first?.reason, "sourdough")
+        XCTAssertTrue(lines.first?.place.hasSuffix("Bakery") == true)
+        XCTAssertEqual(lines.last?.place, "Checkout")
+    }
 }

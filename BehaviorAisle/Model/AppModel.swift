@@ -24,9 +24,18 @@ final class AppModel {
     static let defaultProxy = ""
     static let defaultMode = PredictorMode.heuristic
     #endif
+    /// Shelf stock density; `applyDensity()` rebuilds the store with it.
+    var density = StoreDensity.load() {
+        didSet { density.save() }
+    }
+    @ObservationIgnored var storeHost = Entity()
     var showArcs = true
     var showCards = true
     var showAnomaly = true
+    /// Destination path, shelf beacon and intent panel for imported shoppers.
+    var showIntent = true {
+        didSet { for s in shoppers { intents.update(s, catalog: catalog, visible: showIntent) } }
+    }
     var heatmapOn = false
     var heatmapBusy = false
     var immersiveOpen = false
@@ -50,6 +59,7 @@ final class AppModel {
     @ObservationIgnored var arcs = ArcLayer()
     @ObservationIgnored var ghosts = GhostLayer()
     @ObservationIgnored var heatmap = HeatmapLayer()
+    @ObservationIgnored let intents = IntentLayer()
 
     /// Cached so each prediction request skips a synchronous Keychain read on the main thread.
     @ObservationIgnored private var cachedToken: String?
@@ -81,7 +91,7 @@ final class AppModel {
 
     func buildScene(into content: RealityViewContent) async -> Entity {
         loadProgress = 0
-        let built = await StoreBuilder.build(catalog: catalog) { [weak self] f, stage in
+        let built = await StoreBuilder.build(catalog: catalog, density: density) { [weak self] f, stage in
             self?.loadProgress = f
             self?.loadStage = stage
         }
@@ -90,12 +100,30 @@ final class AppModel {
         vizRoot.addChild(arcs.root)
         vizRoot.addChild(ghosts.root)
         vizRoot.addChild(heatmap.root)
-        content.add(built.root)
+        vizRoot.addChild(intents.root)
+        storeHost.addChild(built.root)
+        content.add(storeHost)
         loadProgress = 0.92
         loadStage = "Spawning shoppers"
         await spawnShoppers()
         loadProgress = nil
         return built.root
+    }
+
+    /// Rebuilds the store shell and shelves at the current density; shoppers and viz layers move over.
+    func applyDensity() async {
+        guard let old = store, loadProgress == nil else { return }
+        loadProgress = 0
+        let built = await StoreBuilder.build(catalog: catalog, density: density) { [weak self] f, stage in
+            self?.loadProgress = f
+            self?.loadStage = stage
+        }
+        built.root.addChild(vizRoot)
+        for s in shoppers { built.root.addChild(s.root) }
+        old.root.removeFromParent()
+        storeHost.addChild(built.root)
+        store = built
+        loadProgress = nil
     }
 
     func spawnShoppers() async {
@@ -159,7 +187,7 @@ final class AppModel {
         let persona = traits.persona(for: profile)
         importedPersonas.removeAll { $0.id == persona.id }
         importedPersonas.append(persona)
-        for old in shoppers where old.persona.id == persona.id { old.root.removeFromParent() }
+        for old in shoppers where old.persona.id == persona.id { old.root.removeFromParent(); intents.clear(old.id) }
         shoppers.removeAll { $0.persona.id == persona.id }
         let spec: HumanSpec? = traits.body.confidence > 0.2
             ? HumanTraitsMapper.spec(traits.body, seed: persona.skinSeed)
@@ -211,6 +239,7 @@ final class AppModel {
             }
         }
         for s in shoppers { s.cloud?.tick(dt) }
+        intents.tick(dt)
         ghosts.tick(dt)
         if showCards { arcs.follow(shoppers) }
     }
@@ -238,6 +267,7 @@ final class AppModel {
         if showAnomaly { s.anomaly = r.anomaly }
         status = "\(s.persona.name): \(r.source)"
         arcs.update(s, catalog: catalog, visible: showArcs)
+        intents.update(s, catalog: catalog, visible: showIntent)
         if forkId == s.id { ghosts.spawn(for: s, catalog: catalog) }
         guard !s.frozen else { return }
         execute(s)
@@ -246,6 +276,7 @@ final class AppModel {
     func execute(_ s: ShopperAgent) {
         guard let choice = s.choose() else { return }
         s.target = choice
+        intents.update(s, catalog: catalog, visible: showIntent)
         if choice.action == .checkout || choice.itemId == Prediction.checkoutId {
             s.path = StoreLayout.path(from: s.position, to: StoreLayout.checkoutStand)
             s.phase = .checkingOut

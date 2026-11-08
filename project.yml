@@ -10,7 +10,7 @@ settings:
     SWIFT_STRICT_CONCURRENCY: complete
 packages:
   RealityHD:
-    path: ../RealityHD
+    path: ../.rhd-main/RealityHD
   HumanHD:
     path: ../HumanHD
   DicyaninStageDirector:

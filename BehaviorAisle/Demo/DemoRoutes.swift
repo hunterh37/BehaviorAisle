@@ -47,6 +47,7 @@ enum DemoRoutes {
                 model.mode = .heuristic
                 model.showCards = t.param("cards") == "1"
                 model.showArcs = t.param("arcs") == "1"
+                model.showIntent = t.param("intent") == "1"
                 await t.openImmersive(StoreSpace.id)
                 while model.store == nil || model.loadProgress != nil { await t.wait(0.3) }
                 if t.param("window") != "1" { t.dismissWindow("control") }
@@ -61,6 +62,8 @@ enum DemoRoutes {
                     s.root.setOrientation(simd_quatf(angle: Float(t.param("yaw", default: 0)) * .pi / 180, axis: [0, 1, 0]), relativeTo: nil)
                     s.express(.smile)
                     s.look(at: [0, 1.6, 0])
+                    // Re-ask from the posed spot so the intent path starts at the shopper.
+                    if model.showIntent { model.request(s) }
                 }
                 await t.wait(t.param("settle", default: 6))
                 await t.ready(); await t.wait(4); t.done()
