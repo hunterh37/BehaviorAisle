@@ -2,6 +2,9 @@ import SwiftUI
 import RealKit
 import RealLibrary
 import HumanKit
+#if DEBUG
+import DicyaninStageDirector
+#endif
 
 @main
 struct BehaviorAisleApp: App {
@@ -17,8 +20,11 @@ struct BehaviorAisleApp: App {
         WindowGroup(id: "control") {
             ControlView()
                 .environment(model)
+                #if DEBUG
+                .director { DemoRoutes.register($0, model: model) }
+                #endif
         }
-        .defaultSize(width: 520, height: 760)
+        .defaultSize(width: 680, height: 860)
 
         ImmersiveSpace(id: StoreSpace.id) {
             StoreSpace()

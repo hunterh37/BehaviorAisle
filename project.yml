@@ -13,6 +13,8 @@ packages:
     path: ../RealityHD
   HumanHD:
     path: ../HumanHD
+  DicyaninStageDirector:
+    path: ../DicyaninStageDirector
 targets:
   BehaviorAisle:
     type: application
@@ -40,6 +42,8 @@ targets:
         product: RealityHD
       - package: HumanHD
         product: HumanHD
+      - package: DicyaninStageDirector
+        product: DicyaninStageDirector
   BehaviorAisleTests:
     type: bundle.unit-test
     platform: visionOS
@@ -50,6 +54,7 @@ targets:
       - BehaviorAisle/Model/StoreLayout.swift
       - BehaviorAisle/Predict/Prediction.swift
       - BehaviorAisle/Predict/HeuristicPredictor.swift
+      - BehaviorAisle/Profile/ProfileTraits.swift
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: org.dicyaninlabs.behavioraisletests

@@ -23,6 +23,11 @@ final class ShopperAgent: Identifiable {
     var phase: Phase = .thinking
     var target: Prediction?
     var frozen = false
+    /// Set for shoppers imported from an X profile.
+    let spec: HumanSpec?
+    var traits: ProfileTraits?
+    var profile: TwitterProfile?
+    @ObservationIgnored var cloud: ThoughtCloud?
     @ObservationIgnored var path: [SIMD3<Float>] = []
     @ObservationIgnored var timer: Float = 0
     @ObservationIgnored var requestId = 0
@@ -30,9 +35,10 @@ final class ShopperAgent: Identifiable {
 
     static let walkSpeed: Float = 1.05
 
-    init(persona: Persona, index: Int) {
+    init(persona: Persona, index: Int, spec: HumanSpec? = nil) {
         id = "\(persona.id)-\(index)"
         self.persona = persona
+        self.spec = spec
         history = persona.seedHistory
         rng = SplitMix(seed: persona.skinSeed &+ UInt64(index) &* 977)
         root.name = "shopper:" + id
@@ -45,7 +51,7 @@ final class ShopperAgent: Identifiable {
     var position: SIMD3<Float> { root.position(relativeTo: nil) }
 
     func loadBody() async {
-        let spec = HumanSpec.random(seed: persona.skinSeed)
+        let spec = self.spec ?? HumanSpec.random(seed: persona.skinSeed)
         guard let c = try? await Human.make(spec, seed: persona.skinSeed) else {
             let m = SimpleMaterial(color: .init(hex: persona.color), roughness: 0.6, isMetallic: false)
             let cap = ModelEntity(mesh: .generateCylinder(height: 1.7, radius: 0.22), materials: [m])
@@ -74,9 +80,8 @@ final class ShopperAgent: Identifiable {
 
     /// Advances movement. Returns true on arrival.
     func step(_ dt: Float) -> Bool {
-        let anim = character?.animator
         guard phase == .walking, !frozen, let next = path.first else {
-            anim?.core.speed = 0
+            setSpeed(0)
             return false
         }
         var p = root.position
@@ -91,8 +96,14 @@ final class ShopperAgent: Identifiable {
         }
         root.position = p
         if dist > 0.01 { root.orientation = simd_quatf(angle: atan2(d.x, d.z), axis: [0, 1, 0]) }
-        anim?.core.speed = path.isEmpty ? 0 : Self.walkSpeed
+        setSpeed(path.isEmpty ? 0 : Self.walkSpeed)
         return path.isEmpty
+    }
+
+    /// Writes the animator speed only on change; idle shoppers otherwise touch the animator every frame.
+    private func setSpeed(_ v: Float) {
+        guard let anim = character?.animator, anim.core.speed != v else { return }
+        anim.core.speed = v
     }
 
     func look(at p: SIMD3<Float>?) { character?.animator?.look(atWorld: p) }

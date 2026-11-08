@@ -1,0 +1,56 @@
+{
+ "bundleId": "org.dicyaninlabs.behavioraisle",
+ "scheme": "BehaviorAisle",
+ "settleSeconds": 0.5,
+ "timeoutSeconds": 300,
+ "shots": [
+  {
+   "id": "01-fetching",
+   "route": "profile/fetching",
+   "at": 0.4,
+   "caption": "Import an X profile"
+  },
+  {
+   "id": "02-reading",
+   "route": "profile/reading",
+   "at": 0.6,
+   "caption": "Reading posts"
+  },
+  {
+   "id": "03-classifying",
+   "route": "profile/result",
+   "at": 0.3,
+   "params": {
+    "stop": "classifying"
+   },
+   "caption": "Classifying traits"
+  },
+  {
+   "id": "04-result",
+   "route": "profile/result",
+   "at": 0.5,
+   "caption": "Predicted shopping profile"
+  },
+  {
+   "id": "05-shopper",
+   "route": "store/shopper",
+   "at": 0.5,
+   "params": {
+    "dist": "2.6"
+   },
+   "caption": "Shopper with thought cloud"
+  },
+  {
+   "id": "06-aisle",
+   "route": "store/shopper",
+   "at": 0.5,
+   "params": {
+    "dist": "3.4",
+    "cards": "1",
+    "x": "0",
+    "yaw": "0"
+   },
+   "caption": "Predictions in the aisle"
+  }
+ ]
+}

@@ -15,7 +15,9 @@ enum StoreBuilder {
         var env: RealEnvironment?
     }
 
-    static func build(catalog: [Product]) async -> Built {
+    /// `progress(fraction, stage)` reports 0...1 as the shell, fixtures and products load.
+    static func build(catalog: [Product], progress: (Double, String) -> Void = { _, _ in }) async -> Built {
+        progress(0.02, "Loading store")
         let root = Entity()
         root.name = "store"
         var env: RealEnvironment?
@@ -23,13 +25,16 @@ enum StoreBuilder {
             root.addChild(shell)
         } else {
             root.addChild(fallbackShell())
+            progress(0.1, "Placing fixtures")
             await addFixtures(to: root)
         }
+        progress(0.25, "Lighting")
         env = try? RealityHD.environment(SunSky(), skybox: false)
         if let env { root.addChild(env.root) }
         var slots: [String: Entity] = [:]
         var protos: [String: Entity] = [:]
-        for p in catalog {
+        for (i, p) in catalog.enumerated() {
+            progress(0.3 + 0.6 * Double(i) / Double(max(catalog.count, 1)), "Stocking shelves")
             let proto: Entity
             if let e = protos[p.asset] { proto = e } else {
                 proto = (try? await RealityHD.entity(p.asset, grabbable: false)) ?? placeholder(p)
@@ -39,6 +44,7 @@ enum StoreBuilder {
             root.addChild(slot)
             slots[p.id] = slot
         }
+        progress(0.9, "Lighting")
         env?.illuminate(root)
         addLights(to: root)
         return Built(root: root, slots: slots, env: env)

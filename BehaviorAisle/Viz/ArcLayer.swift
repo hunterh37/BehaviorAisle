@@ -30,7 +30,11 @@ struct ArcLayer {
 
     /// Keeps arcs anchored at their prediction origin; nothing per frame beyond visibility.
     func follow(_ shoppers: [ShopperAgent]) {
-        for s in shoppers { groups[s.id]?.isEnabled = !(s.phase == .done) }
+        for s in shoppers {
+            guard let g = groups[s.id] else { continue }
+            let on = s.phase != .done
+            if g.isEnabled != on { g.isEnabled = on }
+        }
     }
 
     func clearAll() { root.children.removeAll() }
