@@ -1,0 +1,64 @@
+name: BehaviorAisle
+options:
+  bundleIdPrefix: org.dicyaninlabs
+  deploymentTarget:
+    visionOS: "26.0"
+settings:
+  base:
+    DEVELOPMENT_TEAM: NWR2UZ4V67
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+packages:
+  RealityHD:
+    path: ../RealityHD
+  HumanHD:
+    path: ../HumanHD
+targets:
+  BehaviorAisle:
+    type: application
+    platform: visionOS
+    sources:
+      - BehaviorAisle
+    info:
+      path: Support/Info.plist
+      properties:
+        CFBundleDisplayName: Behavior Aisle
+        ITSAppUsesNonExemptEncryption: false
+        NSWorldSensingUsageDescription: World sensing keeps the store and shoppers at life size around you.
+        UIApplicationSceneManifest:
+          UIApplicationPreferredDefaultSceneSessionRole: UIWindowSceneSessionRoleApplication
+          UIApplicationSupportsMultipleScenes: true
+          UISceneConfigurations: {}
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.dicyaninlabs.behavioraisle
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    dependencies:
+      - package: RealityHD
+        product: RealityHD
+      - package: HumanHD
+        product: HumanHD
+  BehaviorAisleTests:
+    type: bundle.unit-test
+    platform: visionOS
+    sources:
+      - BehaviorAisleTests
+      - BehaviorAisle/Model/Catalog.swift
+      - BehaviorAisle/Model/Persona.swift
+      - BehaviorAisle/Model/StoreLayout.swift
+      - BehaviorAisle/Predict/Prediction.swift
+      - BehaviorAisle/Predict/HeuristicPredictor.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.dicyaninlabs.behavioraisletests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: ""
+        BUNDLE_LOADER: ""
+schemes:
+  BehaviorAisle:
+    build:
+      targets:
+        BehaviorAisle: all
+    test:
+      targets:
+        - BehaviorAisleTests
