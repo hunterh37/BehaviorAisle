@@ -15,38 +15,70 @@ enum StoreBuilder {
         var env: RealEnvironment?
     }
 
-    /// `progress(fraction, stage)` reports 0...1 as the shell, fixtures and products load.
-    static func build(catalog: [Product], density: StoreDensity = .default,
-                      progress: (Double, String) -> Void = { _, _ in }) async -> Built {
-        progress(0.02, "Loading store")
-        let root = Entity()
-        root.name = "store"
-        var env: RealEnvironment?
-        let spec = GroceryStore().with {
+    /// Shell and product templates, shared by every build. Loads start at launch (`prewarm`) and run in parallel;
+    /// builds clone the cached templates, so reopening the space or switching density skips generation.
+    private static var shellTasks: [String: Task<Entity?, Never>] = [:]
+    private static var protoTasks: [String: Task<Entity?, Never>] = [:]
+    private static var fixturesTask: Task<Entity, Never>?
+
+    static func spec(_ density: StoreDensity) -> GroceryStore {
+        GroceryStore().with {
             $0.stockFill = density.fill
             $0.stockDepth = density.depth
             $0.packing = density.packing
             $0.overstock = density.overstock
         }
-        if let shell = try? await RealityHD.scene(spec) {
-            root.addChild(shell)
+    }
+
+    private static func shellKey(_ d: StoreDensity) -> String { "\(d.fill)|\(d.depth)|\(d.packing)|\(d.overstock)" }
+
+    private static func shellTask(_ density: StoreDensity) -> Task<Entity?, Never> {
+        let key = shellKey(density)
+        if let t = shellTasks[key] { return t }
+        let spec = spec(density)
+        let t = Task<Entity?, Never> { try? await RealityHD.scene(spec) }
+        shellTasks[key] = t
+        return t
+    }
+
+    private static func protoTask(_ asset: String) -> Task<Entity?, Never> {
+        if let t = protoTasks[asset] { return t }
+        let t = Task<Entity?, Never> { try? await RealityHD.entity(asset, grabbable: false) }
+        protoTasks[asset] = t
+        return t
+    }
+
+    /// Starts the store shell and every product model loading in parallel. Safe to call repeatedly.
+    static func prewarm(catalog: [Product], density: StoreDensity = .default) {
+        _ = shellTask(density)
+        for a in Set(catalog.map(\.asset)) { _ = protoTask(a) }
+    }
+
+    /// `progress(fraction, stage)` reports 0...1 as the shell, fixtures and products load.
+    static func build(catalog: [Product], density: StoreDensity = .default,
+                      progress: (Double, String) -> Void = { _, _ in }) async -> Built {
+        progress(0.02, "Loading store")
+        prewarm(catalog: catalog, density: density)
+        let root = Entity()
+        root.name = "store"
+        var env: RealEnvironment?
+        if let shell = await shellTask(density).value {
+            root.addChild(shell.clone(recursive: true))
         } else {
             root.addChild(fallbackShell())
             progress(0.1, "Placing fixtures")
-            await addFixtures(to: root)
+            if fixturesTask == nil {
+                fixturesTask = Task { let f = Entity(); await addFixtures(to: f); return f }
+            }
+            if let f = await fixturesTask?.value { root.addChild(f.clone(recursive: true)) }
         }
         progress(0.25, "Lighting")
         env = try? RealityHD.environment(SunSky(), skybox: false)
         if let env { root.addChild(env.root) }
         var slots: [String: Entity] = [:]
-        var protos: [String: Entity] = [:]
         for (i, p) in catalog.enumerated() {
             progress(0.3 + 0.6 * Double(i) / Double(max(catalog.count, 1)), "Stocking shelves")
-            let proto: Entity
-            if let e = protos[p.asset] { proto = e } else {
-                proto = (try? await RealityHD.entity(p.asset, grabbable: false)) ?? placeholder(p)
-                protos[p.asset] = proto
-            }
+            let proto = await protoTask(p.asset).value ?? placeholder(p)
             let slot = makeSlot(p, proto: proto, facings: density.skuFacings, deep: density.depth >= 4 ? 2 : 1)
             root.addChild(slot)
             slots[p.id] = slot

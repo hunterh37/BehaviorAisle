@@ -11,7 +11,7 @@ BG, FG, DIM, ACC = (12, 14, 18), (240, 240, 240), (150, 155, 165), (94, 230, 168
 
 # (file, crop window only, title, lines)
 PAGES = [
-    ("title", False, "Behavior Aisle", [
+    ("title", False, "Shelfcast", [
         "Test a store change on simulated shoppers before moving a single box.",
         "BehaviorGPT predicts each shopper's next action; paired simulation prices the change.",
         "Apple Vision Pro, 1:1 grocery store.",

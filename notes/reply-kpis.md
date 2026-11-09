@@ -2,7 +2,7 @@
 
 ## KPIs store owners and category managers track
 
-| KPI | Definition | Current state in Behavior Aisle |
+| KPI | Definition | Current state in Shelfcast |
 |---|---|---|
 | Sales per sq ft / per linear shelf ft | Revenue per unit of fixture space | Missing. Revenue delta exists (`Experiment.WhatIf.revenueDelta`), not normalized by space |
 | Average basket size (units, $) | Items and dollars per transaction | Units only (`basketBase/Variant`). Add $ |

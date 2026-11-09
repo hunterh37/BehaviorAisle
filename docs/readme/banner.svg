@@ -7,7 +7,7 @@
 <path d="M700 230 C 790 120, 880 220, 960 120 S 1100 80, 1140 70" fill="none" stroke="url(#m)" stroke-width="5" stroke-linecap="round"/>
 <circle cx="700" cy="230" r="10" fill="#5CD6A0"/><circle cx="1140" cy="70" r="14" fill="none" stroke="#A8F0CF" stroke-width="4"/>
 <text x="1092" y="58" fill="#A8F0CF" font-family="Helvetica Neue,Arial" font-size="18" font-weight="700">p 0.41</text>
-<text x="64" y="138" fill="#FFFFFF" font-family="Helvetica Neue,Arial" font-size="72" font-weight="800" letter-spacing="-2">Behavior Aisle</text>
+<text x="64" y="138" fill="#FFFFFF" font-family="Helvetica Neue,Arial" font-size="72" font-weight="800" letter-spacing="-2">Shelfcast</text>
 <text x="66" y="190" fill="#A8F0CF" font-family="Helvetica Neue,Arial" font-size="26" font-weight="500">Test the store change before the store changes.</text>
 <text x="66" y="248" fill="#7C9A8B" font-family="Helvetica Neue,Arial" font-size="16" letter-spacing="3">APPLE VISION PRO  ·  BEHAVIORGPT  ·  SUNDAI HACK 148, MIT</text>
 </svg>

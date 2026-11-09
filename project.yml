@@ -21,10 +21,14 @@ targets:
     platform: visionOS
     sources:
       - BehaviorAisle
+      - path: Prebaked/RealityHDPrebaked
+        type: folder
+        buildPhase: resources
+        optional: true
     info:
       path: Support/Info.plist
       properties:
-        CFBundleDisplayName: Behavior Aisle
+        CFBundleDisplayName: Shelfcast
         UnboxAPIKey: $(UNBOXAI_API_KEY)
         ITSAppUsesNonExemptEncryption: false
         NSAppTransportSecurity:

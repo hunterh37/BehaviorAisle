@@ -10,7 +10,7 @@ W, H = 1920, 1080
 BG, FG, DIM, ACC = (12, 14, 18), (240, 240, 240), (150, 155, 165), (94, 230, 168)
 
 PAGES = [
-    ("title", "Behavior Aisle: predicted intent", [
+    ("title", "Shelfcast: predicted intent", [
         "X profile -> interests -> predicted groceries -> the shelf they walk to.",
         "New since the X profile demo: intent panel, shelf beacon, floor path, reason per item.",
     ]),

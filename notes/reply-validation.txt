@@ -1,4 +1,4 @@
-Behavior Aisle: real-data validation and plan test
+ehavior Aisle: real-data validation and plan test
 
 Validation (tools/validate_instacart.py, Instacart train split, 600 held-out basket prefixes)
 Task: given the SKUs added to the cart so far, predict the next SKU (32 SKUs).

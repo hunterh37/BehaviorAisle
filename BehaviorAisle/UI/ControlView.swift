@@ -14,9 +14,12 @@ struct ControlView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
                 header
+                flow1Button
                 enterButton
+                BehaviorGPTFlowCard()
                 stats
                 shoppersSection
+                topSellers
                 importSection
                 whatIfSection.id("whatif")
                 Section { PlanTestSection() } header: { SectionHeader("Plan test") }.id("plan")
@@ -32,6 +35,11 @@ struct ControlView: View {
         }
         .ornament(attachmentAnchor: .scene(.bottom)) { overlayBar }
         .sheet(isPresented: $showSettings) { SettingsSheet() }
+        .sheet(isPresented: Binding(get: { model.showFlow1 }, set: { model.showFlow1 = $0 })) {
+            NavigationStack { Flow1View() }
+                .environment(model)
+                .frame(width: 1280, height: 820)
+        }
         .sheet(isPresented: Binding(get: { model.showAnalysis }, set: { model.showAnalysis = $0 })) {
             NavigationStack { ProfileImportView() }
                 .environment(model)
@@ -48,7 +56,7 @@ struct ControlView: View {
                 .foregroundStyle(Theme.accent)
                 .frame(width: 48, height: 48)
                 .background(Theme.accent.opacity(0.15), in: .circle)
-            Text("Behavior Aisle").font(.extraLargeTitle2.weight(.bold))
+            Text("Shelfcast").font(.extraLargeTitle2.weight(.bold))
             Spacer()
             sourcePill
             Button { showSettings = true } label: { Image(systemName: "gearshape") }
@@ -58,9 +66,11 @@ struct ControlView: View {
     }
 
     private var sourcePill: some View {
+        @Bindable var model = model
         let live = model.mode == .live
         let c = live ? Theme.accent : Theme.amber
         return HStack(spacing: 6) {
+            OrnamentToggle(icon: "figure.walk", label: "Walk", isOn: $model.walkMode)
             Circle().fill(c).frame(width: 8, height: 8)
                 .shadow(color: c, radius: 4)
             Text(model.mode.label).font(.callout.weight(.semibold))
@@ -132,6 +142,45 @@ struct ControlView: View {
             }
         } header: {
             SectionHeader("Shoppers")
+        }
+    }
+
+    // MARK: Demo Flow 1
+
+    private var flow1Button: some View {
+        Button { model.showFlow1 = true } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "person.crop.circle.badge.plus").font(.title2)
+                Text("Demo Flow 1").font(.title3.weight(.semibold))
+                Spacer()
+            }
+            .padding(.vertical, 6)
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(Flow1View.blue)
+    }
+
+    // MARK: Top sellers
+
+    @ViewBuilder private var topSellers: some View {
+        let rows = Array(model.unitsSold.prefix(5))
+        if !rows.isEmpty {
+            let peak = Double(rows[0].n)
+            Section {
+                VStack(spacing: 8) {
+                    ForEach(rows, id: \.id) { r in
+                        HStack(spacing: 10) {
+                            Text(model.product(r.id)?.name ?? r.id).font(.callout).lineLimit(1)
+                                .frame(width: 160, alignment: .leading)
+                            PBar(p: Double(r.n) / peak, color: Theme.accent, height: 6)
+                            Text("\(r.n)").font(.callout.monospacedDigit().weight(.semibold)).frame(width: 30, alignment: .trailing)
+                        }
+                    }
+                }
+                .padding(16)
+                .background(.white.opacity(0.05), in: .rect(cornerRadius: 18))
+            } header: { SectionHeader("Top sellers") }
         }
     }
 
@@ -222,6 +271,8 @@ struct ControlView: View {
             OrnamentToggle(icon: "point.topleft.down.to.point.bottomright.curvepath", label: "Arcs", isOn: $model.showArcs)
             OrnamentToggle(icon: "exclamationmark.triangle", label: "Anomaly", isOn: $model.showAnomaly)
             OrnamentToggle(icon: "scope", label: "Intent", isOn: $model.showIntent)
+            OrnamentToggle(icon: "shoeprints.fill", label: "Trails", isOn: $model.showTrails)
+            OrnamentToggle(icon: "chart.bar.fill", label: "Demand", isOn: $model.showDemand)
             Divider().frame(height: 28)
             Button {
                 if model.heatmapOn { model.hideHeatmap() } else { model.runHeatmap() }

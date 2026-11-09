@@ -1,4 +1,4 @@
-# Behavior Aisle UI
+# Shelfcast UI
 
 Hackathon demo: judges watch 2-3 minutes, often on a mirrored screen. The window must read from across a room
 and the immersive store carries the story. Pattern chosen: single glass dashboard window plus a bottom ornament,

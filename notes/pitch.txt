@@ -1,0 +1,23 @@
+PITCH (one line)
+Test a store change before moving a single shelf.
+
+PITCH (10 seconds)
+Shelfcast is a 3D twin of your store. AI shoppers, driven by
+BehaviorGPT, walk it the way real customers would. Move a product or
+put it on sale, and you see the new paths before you change the real store.
+
+PITCH (30 seconds)
+Store owners rearrange shelves on gut feel and find out weeks later if it
+worked. Shelfcast is a 3D copy of the store filled with simulated
+shoppers. Each shopper's next move comes from BehaviorGPT, a model trained
+on real shopping sequences, so they pick products based on what they
+already looked at and have in their cart. Drag an item to eye level or put
+it on sale and the shoppers' paths, carts and checkout timing change on
+screen. The owner sees the effect of a layout change before anyone moves a box.
+
+TRUTH CHECKS (if a judge pushes)
+- Shoppers are simulated, not tracked customers. No cameras, no personal data.
+- BehaviorGPT ranks which product each shopper picks next.
+- Shelf height and sale boosts are app-side weights; BehaviorGPT has no
+  input for layout.
+- It is a fast what-if tool. It does not replace a real A/B test.

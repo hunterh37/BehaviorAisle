@@ -1,0 +1,30 @@
+HOW TO EXPLAIN BEHAVIORGPT (point at the new BehaviorGPT card in the main window)
+
+The card has three boxes. Read them left to right.
+
+1  DID
+   "This is what the shopper has done so far: looked at milk, bread, eggs."
+   That list is sent to BehaviorGPT.
+
+2  BEHAVIORGPT RANKS
+   "BehaviorGPT read that sequence and ranked what a real shopper with that
+   history buys next: #1 butter, #2 coffee, #3 jam."
+   It is trained on real shopping sequences, like a language model trained on text.
+
+3  DOES
+   "The shopper picks from that list and walks to it. Then it repeats."
+
+ONE LINE
+"BehaviorGPT predicts each shopper's next product from what they did before.
+We put those predictions into a 3D store so an owner can see them walk."
+
+WHY IT MATTERS TO A STORE OWNER
+Move a product or discount it, and the shoppers react. The owner tests a
+layout before touching the real store.
+
+IF ASKED "WHERE DO THE PERCENTAGES COME FROM?"
+"The order comes from BehaviorGPT. We turn rank into a percentage and boost
+sale items and eye-level shelves, because the API doesn't know the layout."
+
+Footer line on the card shows proof: events sent, HTTP 200, latency, call count.
+Console button opens the raw request and response.

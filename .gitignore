@@ -72,3 +72,4 @@ AuthKey_*.p8
 
 Support/Secrets.xcconfig
 tools/__pycache__/
+Prebaked/

@@ -74,7 +74,7 @@ def base(title):
 
 def p_title():
     im, d = base("")
-    d.text((120, 320), "Behavior Aisle demo plan", font=font(96, True), fill=FG)
+    d.text((120, 320), "Shelfcast demo plan", font=font(96, True), fill=FG)
     d.text((120, 450), "Sundai Hack 148 · Behavioral Models · 8 Nov 2026", font=font(44), fill=ACC)
     d.text((120, 520), "Coverage of expected features, must-finish list, 3-minute run sheet.", font=font(36), fill=DIM)
     shot = os.path.join(RAW, "06-aisle.png")

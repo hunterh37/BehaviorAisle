@@ -32,9 +32,24 @@ final class AppModel {
     var showIntent = true {
         didSet { for s in shoppers { intents.update(s, catalog: catalog, visible: showIntent) } }
     }
+    var showTrails = true {
+        didSet { trails.visible = showTrails }
+    }
+    var showDemand = false {
+        didSet { demand.visible = showDemand; demand.update(shoppers, catalog: catalog) }
+    }
     var heatmapOn = false
     var heatmapBusy = false
     var immersiveOpen = false
+    /// Tap-the-floor locomotion in the store space.
+    var walkMode = false
+    @ObservationIgnored let ground: Entity = {
+        let g = Entity()
+        g.name = "ground"
+        g.components.set(CollisionComponent(shapes: [.generateBox(size: [80, 0.02, 80]).offsetBy(translation: [0, -0.01, 0])]))
+        g.components.set(InputTargetComponent())
+        return g
+    }()
     /// Scene generation progress 0...1; nil when no build is running.
     var loadProgress: Double?
     var loadStage = ""
@@ -49,6 +64,9 @@ final class AppModel {
     /// Profile import pipeline state for ProfileImportView.
     var importStage: ImportStage = .idle
     var showAnalysis = false
+    /// Demo Flow 1 (@handle -> HumanHD shopper in 20 s) state and sheet.
+    let flow1 = Flow1()
+    var showFlow1 = false
     /// Control window section to scroll to (demo routes and verdict taps).
     var scrollTarget: String?
     var importedProfile: TwitterProfile?
@@ -62,6 +80,8 @@ final class AppModel {
     @ObservationIgnored var ghosts = GhostLayer()
     @ObservationIgnored var heatmap = HeatmapLayer()
     @ObservationIgnored let intents = IntentLayer()
+    @ObservationIgnored let trails = TrailLayer()
+    @ObservationIgnored let demand = DemandLayer()
 
     /// Cached so each prediction request skips a synchronous Keychain read on the main thread.
     @ObservationIgnored private var cachedToken: String?
@@ -109,8 +129,12 @@ final class AppModel {
         vizRoot.addChild(ghosts.root)
         vizRoot.addChild(heatmap.root)
         vizRoot.addChild(intents.root)
+        vizRoot.addChild(trails.root)
+        vizRoot.addChild(demand.root)
         // Reopening the space rebuilds the store; drop the previous one so two stores never render.
         storeHost.children.removeAll()
+        storeHost.position = .zero
+        storeHost.addChild(ground)
         storeHost.addChild(built.root)
         content.add(storeHost)
         loadProgress = nil
@@ -134,15 +158,27 @@ final class AppModel {
         loadProgress = nil
     }
 
+    /// Moves the store so the tapped floor point (scene space) ends under the viewer.
+    func walk(to p: SIMD3<Float>) {
+        guard walkMode else { return }
+        var t = storeHost.transform
+        t.translation -= SIMD3(p.x, 0, p.z)
+        storeHost.move(to: t, relativeTo: storeHost.parent, duration: 0.6, timingFunction: .easeInOut)
+    }
+
     func spawnShoppers() async {
         shoppers.forEach { $0.root.removeFromParent() }
         let imported = shoppers.filter { $0.traits != nil }
         shoppers = Persona.all.enumerated().map { ShopperAgent(persona: $1, index: $0) }
-        for s in shoppers {
-            store?.root.addChild(s.root)
-            await s.loadBody()
-            request(s)
+        for s in shoppers { store?.root.addChild(s.root) }
+        // Bodies load concurrently; each shopper starts as soon as its own body is ready.
+        let loads = shoppers.map { s in
+            Task { @MainActor in
+                await s.loadBody()
+                self.request(s)
+            }
         }
+        for t in loads { await t.value }
         for old in imported {
             guard let t = old.traits, let p = old.profile else { continue }
             await spawnImported(p, t)
@@ -225,6 +261,7 @@ final class AppModel {
         lastWhatIf = nil
         whatIfResult = nil
         whatIfItem = nil
+        trails.clear()
         Task { await spawnShoppers() }
     }
 
@@ -250,6 +287,7 @@ final class AppModel {
         }
         for s in shoppers { s.cloud?.tick(dt) }
         intents.tick(dt)
+        if showTrails { trails.tick(shoppers) }
         ghosts.tick(dt)
         if showCards { arcs.follow(shoppers) }
     }
@@ -279,9 +317,11 @@ final class AppModel {
         status = "\(s.persona.name): \(r.source)"
         arcs.update(s, catalog: catalog, visible: showArcs)
         intents.update(s, catalog: catalog, visible: showIntent)
+        if showDemand { demand.update(shoppers, catalog: catalog) }
         if forkId == s.id { ghosts.spawn(for: s, catalog: catalog) }
-        guard !s.frozen else { return }
+        guard !s.frozen else { APITrace.shared.applied(s.persona.id, choice: nil, cart: s.cart.count); return }
         execute(s)
+        APITrace.shared.applied(s.persona.id, choice: s.target, cart: s.cart.count)
     }
 
     func execute(_ s: ShopperAgent) {
@@ -452,5 +492,12 @@ final class AppModel {
     func hideHeatmap() {
         heatmap.root.children.removeAll()
         heatmapOn = false
+    }
+
+    /// Units in carts per SKU across live shoppers, highest first.
+    var unitsSold: [(id: String, n: Int)] {
+        var c: [String: Int] = [:]
+        for s in shoppers { for i in s.cart { c[i, default: 0] += 1 } }
+        return c.map { ($0.key, $0.value) }.sorted { $0.n > $1.n }
     }
 }

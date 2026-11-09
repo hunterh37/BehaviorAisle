@@ -46,11 +46,23 @@ struct UnboxPredictor: Predictor {
         r.setValue("application/json", forHTTPHeaderField: "Content-Type")
         r.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         r.httpBody = try JSONEncoder().encode(Body(catalog_id: catalogId, history: history))
+        let traceId = APITrace.currentId
+        if let traceId {
+            let names = Dictionary(req.catalog.map { ($0.id, $0.name) }, uniquingKeysWith: { a, _ in a })
+            let events = history.map { e in
+                e.type == "order" ? "order · \(e.item_ids?.count ?? 0) items in cart" : "view · \(names[e.item_id ?? ""] ?? e.item_id ?? "")"
+            }
+            let body = r.httpBody
+            await APITrace.shared.wire(traceId, endpoint: "POST portal.unboxai.com/api/v1/shop/recommend", events: events, body: body)
+        }
         let (data, resp) = try await URLSession.shared.data(for: r)
-        guard let http = resp as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+        let status = (resp as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200..<300).contains(status) else {
+            if let traceId { await APITrace.shared.reply(traceId, status: status, ranked: [], body: data) }
             throw URLError(.badServerResponse)
         }
         let items = try JSONDecoder().decode(Reply.self, from: data).items
+        if let traceId { await APITrace.shared.reply(traceId, status: status, ranked: items.map(\.id), body: data) }
 
         let byId = Dictionary(req.catalog.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
         var rows: [(id: String, action: BehaviorAction, w: Double)] = []

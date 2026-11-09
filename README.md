@@ -1,4 +1,4 @@
-<p align="center"><img src="docs/readme/banner.svg" alt="Behavior Aisle" width="100%"></p>
+<p align="center"><img src="docs/readme/banner.svg" alt="Shelfcast" width="100%"></p>
 
 <p align="center">
 <img src="https://img.shields.io/badge/platform-visionOS-0B1410?style=flat-square">
@@ -7,10 +7,10 @@
 <img src="https://img.shields.io/badge/Sundai%20Hack-148%20%C2%B7%20MIT-A8F0CF?style=flat-square">
 </p>
 
-<p align="center"><img src="docs/readme/hero-wide.jpg" alt="Shopper in the Behavior Aisle store with predicted next items overhead" width="100%"></p>
+<p align="center"><img src="docs/readme/hero-wide.jpg" alt="Shopper in the Shelfcast store with predicted next items overhead" width="100%"></p>
 
 A store change (an endcap move, a sale sign, an aisle swap) costs labor, shelf downtime and weeks of sales data
-before anyone knows whether it worked. Behavior Aisle runs the change first, in a 1:1 supermarket on Apple Vision
+before anyone knows whether it worked. Shelfcast runs the change first, in a 1:1 supermarket on Apple Vision
 Pro, with shoppers driven by a large behavioral model. Move a product, watch shoppers re-decide, read the margin
 per store per week with a confidence interval, and ship or kill the plan.
 

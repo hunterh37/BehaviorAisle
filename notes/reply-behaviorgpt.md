@@ -1,4 +1,4 @@
-# Is Behavior Aisle calling BehaviorGPT for real
+# Is Shelfcast calling BehaviorGPT for real
 
 Partly. The call is real when the local proxy runs. Most of what the demo shows comes from app-side code.
 

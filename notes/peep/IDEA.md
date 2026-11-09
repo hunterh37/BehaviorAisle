@@ -1,4 +1,4 @@
-# Behavior Aisle
+# Shelfcast
 
 Immersive grocery store where BehaviorGPT shoppers walk, decide and buy on Apple Vision Pro.
 

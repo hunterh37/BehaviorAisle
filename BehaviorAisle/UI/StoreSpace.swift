@@ -2,11 +2,12 @@ import SwiftUI
 import RealityKit
 import RealKit
 
-/// Lifesize store: shoppers, prediction cards, arcs, ghosts, heatmap. Tap shopper = fork view,
+/// Lifesize store: shoppers, prediction cards, arcs, ghosts, heatmap. Tap shopper = fork view, tap floor in walk mode = move there,
 /// drag product = move it, long-press product = toggle sale.
 struct StoreSpace: View {
     static let id = "store"
     @Environment(AppModel.self) private var model
+    @Environment(\.openWindow) private var openWindow
     @State private var updates: EventSubscription?
     @State private var dragStart: [String: SIMD3<Float>] = [:]
 
@@ -40,7 +41,7 @@ struct StoreSpace: View {
         .gesture(drag)
         .gesture(longPress)
         .task { await RealViewerTracker.shared.start() }
-        .onAppear { model.immersiveOpen = true }
+        .onAppear { model.immersiveOpen = true; openWindow(id: APIConsoleView.windowId) }
         .onDisappear { model.immersiveOpen = false }
     }
 
@@ -69,7 +70,10 @@ struct StoreSpace: View {
 
     private var tap: some Gesture {
         SpatialTapGesture().targetedToAnyEntity().onEnded { v in
-            if let id = Self.tagged(v.entity, prefix: "shopper:") { model.toggleFreeze(id) }
+            if let id = Self.tagged(v.entity, prefix: "shopper:") { model.toggleFreeze(id); return }
+            if model.walkMode, Self.tagged(v.entity, prefix: StoreBuilder.skuPrefix) == nil {
+                model.walk(to: v.convert(v.location3D, from: .local, to: .scene))
+            }
         }
     }
 

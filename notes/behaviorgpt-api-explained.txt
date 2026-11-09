@@ -1,0 +1,157 @@
+HOW BEHAVIORAISLE USES THE BEHAVIORGPT API
+==========================================
+
+ONE-SENTENCE ANSWER (say this first)
+------------------------------------
+Each time a virtual shopper finishes an action, the app sends BehaviorGPT that
+shopper's recent history (items viewed, items in cart). BehaviorGPT returns a
+ranked list of products this person is most likely to want next. The app turns
+the top 3 into probabilities, and the shopper walks to the top one.
+
+So BehaviorGPT is the "brain" that picks each shopper's next move.
+
+
+WHAT BEHAVIORGPT IS
+-------------------
+A behavior model from Unbox AI. It is trained on sequences of shopping events
+(what people viewed and bought, in order). Given a new sequence, it predicts
+what comes next, the way a language model predicts the next word.
+Here the "words" are product ids.
+
+
+THE LOOP, STEP BY STEP
+----------------------
+1. Setup (once): our product catalog was uploaded to Unbox AI.
+   It has id cat_aad381c2766331790c3efaa8. Every product in the 3D store has
+   the same id in that catalog, so answers map back to shelves.
+
+2. Shopper acts: views an item, adds it to cart, etc. It is recorded in the
+   shopper's history. (BehaviorAisle/Model/AppModel.swift:257, request())
+
+3. App builds a request: persona id, history, cart, in-stock catalog.
+
+4. Request goes to BehaviorGPT, one of two ways:
+   a) Through our local proxy (proxy/server.mjs, POST /predict). The proxy holds
+      the API key so it is never in the app.
+   b) Direct from the app (UnboxPredictor.swift) using a key baked in at build.
+   Both do the same translation (proxy/core.mjs = UnboxPredictor.swift).
+
+5. BehaviorGPT replies with a ranked list of product ids.
+
+6. App converts ranks to probabilities, keeps top 3, adds a "checkout" option.
+
+7. Shopper walks to the #1 item. Arcs/thought cloud show the top 3.
+   Then the loop repeats from step 2.
+
+
+THE ACTUAL API CALL (INPUT)
+---------------------------
+POST https://portal.unboxai.com/api/v1/shop/recommend
+Header: Authorization: Bearer <UNBOXAI_API_KEY>
+
+{
+  "catalog_id": "cat_aad381c2766331790c3efaa8",
+  "kind": "for_you",            <- personalized recommendations
+  "limit": 8,                   <- return up to 8 items
+  "history": [
+    { "type": "view",  "item_id": "milk_2pct" },
+    { "type": "view",  "item_id": "bread_sourdough" },
+    { "type": "view",  "item_id": "eggs_dozen" },
+    { "type": "order", "item_ids": ["milk_2pct", "eggs_dozen"] }
+  ],
+  "user": { "market": "US" }
+}
+
+(item ids above are examples; real ones come from the catalog.)
+
+What goes in history:
+- Last 19 shopper events, each sent as "view" (add-to-cart and purchase are
+  also sent as "view"; the API only has view and order types).
+- If the cart is not empty, one final "order" event listing cart items (max 20).
+- Checkout events are dropped.
+
+What is NOT sent: shelf position, sale signs, store layout, persona name.
+The API has no fields for those.
+
+
+THE ACTUAL API RESPONSE (OUTPUT)
+--------------------------------
+{
+  "items": [
+    { "id": "butter_salted" },
+    { "id": "coffee_ground" },
+    { "id": "jam_strawberry" },
+    ... up to 8
+  ]
+}
+
+That is all it returns: an ORDERED list of product ids, best guess first.
+There are NO probabilities and NO scores. Position in the list is the signal.
+
+
+WHAT THE APP DOES WITH THE RESPONSE
+-----------------------------------
+BehaviorGPT gives a rank. The 3D store needs a probability per option (to draw
+arcs, thought clouds, and choose). So the app adds its own math on top:
+
+1. Rank prior. Each rank gets a fixed weight:
+     #1 0.32, #2 0.22, #3 0.15, #4 0.11, #5 0.08, #6 0.06, #7 0.04, #8 0.02
+2. In-store boosts (things BehaviorGPT can't see):
+     on sale         x1.8
+     eye-level shelf x1.15  (shelf height 0.8m to 1.6m)
+3. Action label: rank 1-2 or on sale -> "add_to_cart", else "view".
+4. Checkout option added. Weight grows with cart size (about 7 items = likely).
+5. Keep top 3, normalize so they sum to 1.0 -> these are the "p" values.
+
+6. Anomaly score (only when cart has 3+ items):
+     share of cart items that BehaviorGPT did NOT rank, x 0.5.
+   High = this cart looks unusual for this person's history.
+
+Final object the app uses (what the proxy returns to the app):
+{
+  "predictions": [
+    { "item_id": "butter_salted",  "action": "add_to_cart", "p": 0.47 },
+    { "item_id": "coffee_ground",  "action": "add_to_cart", "p": 0.32 },
+    { "item_id": "jam_strawberry", "action": "view",        "p": 0.21 }
+  ],
+  "anomaly": 0.17
+}
+
+HONEST FRAMING: the ORDER comes from BehaviorGPT. The exact percentages are
+the app's rank-to-probability conversion plus store-layout boosts.
+
+
+WHY THE STORE CHANGES (WHAT-IF DEMO)
+------------------------------------
+Move a product to eye level or put it on sale -> BehaviorGPT ranking is the
+same, but the boosts change -> different top 3 -> shoppers walk differently.
+Different shopper histories -> BehaviorGPT ranks differently -> different paths.
+
+
+FALLBACKS (if someone asks "what if the API is down?")
+------------------------------------------------------
+Modes (BehaviorGPTPredictor.swift, RoutedPredictor):
+- Live: call BehaviorGPT. Every live answer is saved to predictions.jsonl.
+- Replay: reuse a saved answer for the same persona + last 4 events.
+- Heuristic: local rule-based guess (HeuristicPredictor.swift).
+Live tries the API (6 s timeout); on failure it uses replay, then heuristic.
+The label on the shopper ("behaviorgpt", "replay", "heuristic") shows which.
+
+The API Console view (UI/APIConsoleView.swift) shows each real request and
+the raw response live during the demo.
+
+
+OTHER AI IN THE APP (NOT BEHAVIORGPT)
+-------------------------------------
+The X/Twitter profile import (avatar -> body, posts -> shopping wishlist)
+uses OpenRouter LLMs (proxy/profile.mjs). That builds the shopper persona.
+BehaviorGPT only handles "what will this shopper pick next".
+
+
+SHORT Q&A
+---------
+Q: What do you send?   A: The shopper's ordered event history and cart.
+Q: What comes back?    A: A ranked list of up to 8 product ids.
+Q: Where do the %s come from?  A: Rank weights plus sale/shelf boosts, ours.
+Q: How often?          A: Once per shopper decision.
+Q: Is the key safe?    A: Held by the proxy or the build secret; not in repo.

@@ -1,4 +1,4 @@
-# What Behavior Aisle is, and whether it is useful
+# What Shelfcast is, and whether it is useful
 
 ## Purpose
 

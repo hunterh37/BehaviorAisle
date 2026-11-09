@@ -14,8 +14,17 @@ struct BehaviorGPTPredictor: Predictor {
         let enc = JSONEncoder()
         enc.keyEncodingStrategy = .convertToSnakeCase
         r.httpBody = try enc.encode(req)
+        let traceId = APITrace.currentId
+        if let traceId {
+            let names = Dictionary(req.catalog.map { ($0.id, $0.name) }, uniquingKeysWith: { a, _ in a })
+            var events = req.history.suffix(19).map { "view · \(names[$0.itemId] ?? $0.itemId)" }
+            if !req.cart.isEmpty { events.append("order · \(req.cart.count) items in cart") }
+            await APITrace.shared.wire(traceId, endpoint: "POST \(endpoint.host ?? "proxy")\(endpoint.path) → BehaviorGPT", events: events, body: nil)
+        }
         let (data, resp) = try await URLSession.shared.data(for: r)
-        guard let http = resp as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+        let status = (resp as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200..<300).contains(status) else {
+            if let traceId { await APITrace.shared.reply(traceId, status: status, ranked: [], body: data) }
             throw URLError(.badServerResponse)
         }
         let dec = JSONDecoder()
@@ -25,6 +34,7 @@ struct BehaviorGPTPredictor: Predictor {
         let known = Set(req.catalog.map(\.id)).union([Prediction.checkoutId])
         let preds = Array(w.predictions.filter { known.contains($0.itemId) }.sorted { $0.p > $1.p }.prefix(3))
         guard !preds.isEmpty else { throw URLError(.cannotParseResponse) }
+        if let traceId { await APITrace.shared.reply(traceId, status: status, ranked: w.predictions.map(\.itemId), body: data) }
         return PredictionResult(predictions: preds, anomaly: w.anomaly, source: "behaviorgpt")
     }
 }
@@ -81,10 +91,21 @@ struct RoutedPredictor: Predictor {
     var heuristic = HeuristicPredictor()
 
     func predict(_ req: PredictionRequest) async throws -> PredictionResult {
+        let id = UUID()
+        await APITrace.shared.begin(id, req)
+        let r = try await APITrace.$currentId.withValue(id) { try await route(req, id) }
+        await APITrace.shared.finish(id, r)
+        return r
+    }
+
+    private func route(_ req: PredictionRequest, _ id: UUID) async throws -> PredictionResult {
         if mode == .live, let live {
-            if let r = try? await live.predict(req) {
+            do {
+                let r = try await live.predict(req)
                 await PredictionLog.shared.record(req, r)
                 return r
+            } catch {
+                await APITrace.shared.fail(id, error)
             }
         }
         if mode != .heuristic, let r = await PredictionLog.shared.lookup(req) { return r }

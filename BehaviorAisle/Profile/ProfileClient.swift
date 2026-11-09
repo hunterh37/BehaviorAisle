@@ -48,6 +48,33 @@ struct ProfileClient: Sendable {
         return t
     }
 
+    /// Demo Flow 1 lane: avatar photo -> body traits (`POST /classify/body`).
+    func body(avatarURL: String?) async throws -> ProfileTraits.Body {
+        var r = URLRequest(url: base.appendingPathComponent("classify/body"), timeoutInterval: 16)
+        r.httpMethod = "POST"
+        r.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        r.httpBody = try JSONSerialization.data(withJSONObject: ["avatar_url": avatarURL.map { $0 as Any } ?? NSNull()])
+        return try await send(r)
+    }
+
+    /// Demo Flow 1 lane: bio + posts + catalog -> shopping traits (`POST /classify/shop`).
+    func shop(_ profile: TwitterProfile, catalog: [Product]) async throws -> ShopTraits {
+        var r = URLRequest(url: base.appendingPathComponent("classify/shop"), timeoutInterval: 16)
+        r.httpMethod = "POST"
+        r.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        struct Item: Encodable { var id, name, category: String; var price: Double }
+        struct Body: Encodable { var profile: TwitterProfile; var catalog: [Item] }
+        let enc = JSONEncoder()
+        enc.keyEncodingStrategy = .convertToSnakeCase
+        r.httpBody = try enc.encode(Body(profile: profile, catalog: catalog.map {
+            Item(id: $0.id, name: $0.name, category: $0.category.rawValue, price: $0.price)
+        }))
+        var t: ShopTraits = try await send(r)
+        let known = Set(catalog.map(\.id))
+        t.wishlist = t.wishlist.filter(known.contains)
+        return t
+    }
+
     private func send<T: Decodable>(_ req: URLRequest) async throws -> T {
         var r = req
         if let token, !token.isEmpty { r.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }

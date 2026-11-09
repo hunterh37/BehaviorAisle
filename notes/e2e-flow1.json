@@ -1,0 +1,179 @@
+{
+  "at": "2026-11-09T00:27:27.541Z",
+  "results": [
+    {
+      "handle": "jack",
+      "ok": true,
+      "errs": [],
+      "total_ms": 1827,
+      "fallback": [
+        "body: /classify/body 502 openrouter 402 {\"error\":{\"message\":\"This request would exceed your avai"
+      ],
+      "ms": {
+        "fetch": 55,
+        "body": 0,
+        "shop": 1771
+      },
+      "source": "fxtwitter",
+      "posts": 20,
+      "avatar": true,
+      "body": {
+        "conf": 0,
+        "age": 30,
+        "hair": "short"
+      },
+      "wishlist": [
+        "coffee",
+        "water",
+        "chips",
+        "soda",
+        "pizza"
+      ],
+      "interests": [
+        "tech",
+        "startups",
+        "AI",
+        "surfing",
+        "F1",
+        "Bitcoin"
+      ]
+    },
+    {
+      "handle": "levelsio",
+      "ok": true,
+      "errs": [],
+      "total_ms": 3398,
+      "fallback": [
+        "body: /classify/body 502 openrouter 402 {\"error\":{\"message\":\"This request requires more credits,",
+        "shop: /classify/shop 502 openrouter 402 {\"error\":{\"message\":\"This request requires more credits,"
+      ],
+      "ms": {
+        "fetch": 1,
+        "body": 0,
+        "shop": 0
+      },
+      "source": "fxtwitter",
+      "posts": 18,
+      "avatar": true,
+      "body": {
+        "conf": 0,
+        "age": 30,
+        "hair": "short"
+      },
+      "wishlist": [
+        "banana"
+      ]
+    },
+    {
+      "handle": "MKBHD",
+      "ok": true,
+      "errs": [],
+      "total_ms": 2188,
+      "fallback": [
+        "body: /classify/body 502 openrouter 402 {\"error\":{\"message\":\"This request requires more credits,"
+      ],
+      "ms": {
+        "fetch": 1,
+        "body": 0,
+        "shop": 2186
+      },
+      "source": "fxtwitter",
+      "posts": 20,
+      "avatar": true,
+      "body": {
+        "conf": 0,
+        "age": 30,
+        "hair": "short"
+      },
+      "wishlist": [
+        "coffee",
+        "chips",
+        "water",
+        "chocolate",
+        "soda"
+      ],
+      "interests": [
+        "consumer tech",
+        "video production",
+        "ultimate frisbee",
+        "Apple products",
+        "VR",
+        "software subscriptions"
+      ]
+    },
+    {
+      "handle": "NASA",
+      "ok": true,
+      "errs": [],
+      "total_ms": 1552,
+      "fallback": [
+        "body: /classify/body 502 openrouter 402 {\"error\":{\"message\":\"This request requires more credits,"
+      ],
+      "ms": {
+        "fetch": 2,
+        "body": 0,
+        "shop": 1550
+      },
+      "source": "fxtwitter",
+      "posts": 19,
+      "avatar": true,
+      "body": {
+        "conf": 0,
+        "age": 30,
+        "hair": "short"
+      },
+      "wishlist": [
+        "coffee",
+        "water",
+        "cereal",
+        "eggs",
+        "milk"
+      ],
+      "interests": [
+        "space exploration",
+        "aerospace",
+        "astronauts",
+        "Moon Base",
+        "air shows",
+        "engineering"
+      ]
+    },
+    {
+      "handle": "tim_cook",
+      "ok": true,
+      "errs": [],
+      "total_ms": 1782,
+      "fallback": [
+        "body: /classify/body 502 openrouter 402 {\"error\":{\"message\":\"This request requires more credits,"
+      ],
+      "ms": {
+        "fetch": 1,
+        "body": 0,
+        "shop": 1781
+      },
+      "source": "fxtwitter",
+      "posts": 19,
+      "avatar": true,
+      "body": {
+        "conf": 0,
+        "age": 30,
+        "hair": "short"
+      },
+      "wishlist": [
+        "coffee",
+        "water",
+        "chocolate",
+        "soda",
+        "cheese"
+      ],
+      "interests": [
+        "Apple products",
+        "Technology",
+        "Travel",
+        "Art and photography",
+        "Charity",
+        "Film and TV"
+      ]
+    }
+  ]
+}

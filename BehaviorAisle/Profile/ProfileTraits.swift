@@ -57,6 +57,28 @@ struct ProfileTraits: Codable, Sendable, Hashable {
     var summary: String
 }
 
+/// Shopping half of ProfileTraits, returned by `/classify/shop`.
+struct ShopTraits: Codable, Sendable, Hashable {
+    var affinity: [String: Double]
+    var priceSensitivity: Double
+    var basketSize: Int
+    var wishlist: [String]
+    var interests: [String]
+    var summary: String
+}
+
+extension ProfileTraits {
+    init(body: Body, shop: ShopTraits) {
+        self.init(body: body, affinity: shop.affinity, priceSensitivity: shop.priceSensitivity,
+                  basketSize: shop.basketSize, wishlist: shop.wishlist, interests: shop.interests, summary: shop.summary)
+    }
+
+    var shop: ShopTraits {
+        ShopTraits(affinity: affinity, priceSensitivity: priceSensitivity, basketSize: basketSize,
+                   wishlist: wishlist, interests: interests, summary: summary)
+    }
+}
+
 extension ProfileTraits {
     /// Persona for the predictor loop. Seed history = viewing the top wishlist items.
     func persona(for profile: TwitterProfile) -> Persona {

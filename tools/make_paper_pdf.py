@@ -32,7 +32,7 @@ class Doc:
         n = len(self.pages)
         self.d.text((W / 2, H - 60), str(n), font=F(20), fill=GREY, anchor="mm")
         if n > 1:
-            self.d.text((M, 55), "Behavior Aisle · Sundai Hack 148", font=F(18, "i"), fill=GREY)
+            self.d.text((M, 55), "Shelfcast · Sundai Hack 148", font=F(18, "i"), fill=GREY)
 
     def need(self, h):
         if self.y + h > H - M:
@@ -135,7 +135,7 @@ nm = lambda i: NAMES.get(i, i.capitalize())
 
 d = Doc()
 d.y = 150
-for line, f in [("Behavior Aisle: Testing Store Changes on", F(44, "b")), ("Predicted Shoppers Before Moving a Shelf", F(44, "b"))]:
+for line, f in [("Shelfcast: Testing Store Changes on", F(44, "b")), ("Predicted Shoppers Before Moving a Shelf", F(44, "b"))]:
     d.d.text((W / 2, d.y), line, font=f, fill=INK, anchor="mt"); d.y += 58
 d.y += 10
 d.d.text((W / 2, d.y), "Cadence Dev Studio · Dicyanin Labs", font=F(24), fill=INK, anchor="mt"); d.y += 34
@@ -145,7 +145,7 @@ d.sub("Abstract")
 d.para(
     "Large Behavioral Models such as BehaviorGPT-v4 predict a person's next action from a short history of actions. "
     "We ask whether next-action predictions can replace the weeks of sales data a retailer waits for after a "
-    "merchandising change. Behavior Aisle places model-driven shoppers in a 1:1 immersive grocery store on Apple "
+    "merchandising change. Shelfcast places model-driven shoppers in a 1:1 immersive grocery store on Apple "
     "Vision Pro. Each shopper sends its history to the model, acts on a sampled prediction, appends the result and asks "
     "again. The user moves products or adds promotions and watches predictions and paths change. We report three "
     f"experiments on the local model that backs the live BehaviorGPT path. Next-action hit@3 is {full['hit3']:.2f} "

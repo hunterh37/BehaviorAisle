@@ -1,0 +1,46 @@
+BEHAVIORAISLE FEATURES AND DEMO LOOP
+====================================
+
+DEMO LOOP (store owner): SEE -> CHANGE -> MEASURE -> DECIDE
+1. SEE      Enter store. Shoppers walk. Turn on Arcs, Intent, Trails, Demand.
+2. CHANGE   Drag a product to eye level, long-press for a sale, or Stock out menu.
+3. MEASURE  What-if card: units per 100 shoppers, +/- 95% CI, net lift, cannibalization.
+4. DECIDE   Plan test: the full plan vs the opening layout, verdict card.
+
+BUILT BEFORE TODAY
+- 3D grocery store, HumanHD shoppers, 5 personas plus X-profile shoppers
+- BehaviorGPT live, with replay and heuristic fallbacks (source tag on each card)
+- Prediction cards above heads (top 3 with %)
+- Arcs: ribbons from shopper to the top 3 products, width = probability
+- Intent: destination path, shelf beacon, intent panel (imported shoppers)
+- Thought cloud: wishlist items over imported shoppers
+- Anomaly flag: "unusual" cart vs history
+- Fork view: tap a shopper to freeze it and show ghost branches of possible next moves
+- Heatmap: 50 simulated shoppers' foot traffic on the floor
+- What-if: move / sale / stock-out, paired 1,500-shopper simulation
+- Plan test, real-data check (Instacart validation)
+- BehaviorGPT API console window (request, response, rank, raw JSON)
+- X handle import: posts -> body + shopping list -> new shopper
+
+ADDED TODAY (ornament toggles plus a dashboard section)
+- Trails (shoeprints icon): colored floor breadcrumbs of each shopper's real walk.
+  Shows browsing loops and dead aisles live.
+- Demand (bar chart icon): glowing column above each shelf item. Height and color
+  are the summed predicted probability across all shoppers right now. Shows
+  "what the store wants next". Move or discount an item and its column grows.
+- Top sellers: dashboard list of the top 5 SKUs by units in carts, live.
+
+DEMO SCRIPT (90 s)
+1. Enter store. "Each shopper's next move comes from BehaviorGPT."
+2. Toggle Arcs + Demand. "Columns show what shoppers want next."
+3. Tap a shopper: fork view, ghost branches.
+4. Drag coffee to eye level, put it on sale. Demand column grows, arcs swing.
+5. Point at the What-if card: "+X units per 100 shoppers, outside the error bar."
+6. Heatmap + Trails: "Here is where people actually walk."
+7. Close on Top sellers and the API console.
+
+NEXT WINS (not built)
+- Dwell rings: floor ring grows while a shopper picks (time at shelf)
+- Before/after demand split: ghost columns showing demand before the last change
+- Zone revenue labels per aisle
+- Checkout queue counter

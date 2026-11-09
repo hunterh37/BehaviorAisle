@@ -1,0 +1,10 @@
+{
+ "bundleId": "org.dicyaninlabs.behavioraisle",
+ "scheme": "BehaviorAisle",
+ "settleSeconds": 0.5,
+ "timeoutSeconds": 300,
+ "shots": [
+  {"id": "a1-console-live", "route": "api/console", "at": 0.5, "params": {"mode": "live", "calls": "6"}, "caption": "Every BehaviorGPT call, live"},
+  {"id": "a2-console-raw", "route": "api/console", "at": 0.5, "params": {"mode": "live", "raw": "1", "calls": "4"}, "caption": "Raw request and response"}
+ ]
+}
